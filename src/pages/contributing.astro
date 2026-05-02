@@ -1,0 +1,43 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Contributing — Machine Authority Protocol" description="How to contribute to the Machine Authority Protocol specification.">
+  <div class="container">
+    <section class="hero-text">
+      <h1>Contributing</h1>
+      <p class="tagline">Read the specifications. File issues. Submit PRs.</p>
+    </section>
+
+    <hr />
+
+    <section>
+      <h2>Channels</h2>
+      <ul>
+        <li><strong>Issues:</strong> <a href="https://github.com/machineauthority/protocol/issues" target="_blank" rel="noopener">github.com/machineauthority/protocol/issues</a> &mdash; bugs, spec ambiguities, proposed changes.</li>
+        <li><strong>Discussions:</strong> <a href="https://github.com/machineauthority/protocol/discussions" target="_blank" rel="noopener">github.com/machineauthority/protocol/discussions</a> &mdash; async design conversations. Lower barrier than PRs.</li>
+        <li><strong>Pull requests:</strong> <a href="https://github.com/machineauthority/protocol/pulls" target="_blank" rel="noopener">github.com/machineauthority/protocol/pulls</a> &mdash; spec text, schemas, examples, tooling.</li>
+      </ul>
+    </section>
+
+    <hr />
+
+    <section>
+      <h2>Contribution areas</h2>
+      <ol>
+        <li><strong>CAR schema feedback</strong> &mdash; edge cases, field additions, mapping to existing protocols (MCP, A2A, ACP).</li>
+        <li><strong>Elicitation Loop</strong> &mdash; push vs. polling delivery design, retry semantics, multi-approver quorum.</li>
+        <li><strong>CAC format</strong> &mdash; encoding (JWT / CBOR / JSON+detached), approver key distribution, post-quantum migration.</li>
+        <li><strong>Reference implementations</strong> &mdash; any agent framework or policy engine. Existing work integrating with OPA, Cedar, OpenFGA, or MCP servers especially welcome.</li>
+        <li><strong>CONFORMANCE.md</strong> &mdash; mapping to <a href="https://aarm.dev" target="_blank" rel="noopener">AARM</a> R1&ndash;R6 requirements and test vector production.</li>
+      </ol>
+    </section>
+
+    <hr />
+
+    <section>
+      <h2>Legal</h2>
+      <p>All contributors must sign off commits with the <a href="https://developercertificate.org" target="_blank" rel="noopener">Developer Certificate of Origin</a> (DCO): <code>git commit -s</code>.</p>
+      <p>The specification and this website are MIT-licensed. Reference implementations MAY use any OSI-approved license; MIT or Apache&nbsp;2.0 is recommended.</p>
+    </section>
+  </div>
+</Base>

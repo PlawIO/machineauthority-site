@@ -1,0 +1,446 @@
+/* machineauthority.org — plain HTML ethic, white, monospace, minimum chrome. */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  background: #fff;
+  color: #111;
+  font-size: 16px;
+}
+
+body {
+  font-family: ui-monospace, "Lucida Console", Menlo, Consolas, "Courier New", monospace;
+  font-size: 16px;
+  line-height: 1.5;
+  background: #fff;
+  color: #111;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+/* Top: centered logo + pipe nav (tinygrad move) */
+.top {
+  padding: 72px 0 28px;
+  text-align: center;
+}
+
+.top .mark {
+  display: inline-block;
+  line-height: 0;
+}
+
+.top .mark img {
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.top .nav {
+  margin-top: 18px;
+  font-size: 16px;
+}
+
+.top .nav a {
+  color: #111;
+  text-decoration: none;
+}
+
+.top .nav a:hover {
+  text-decoration: underline;
+}
+
+.top .nav .sep {
+  color: #999;
+  padding: 0 6px;
+}
+
+.top .nav .accent {
+  color: #e67e00;
+}
+
+.top .nav .accent:hover {
+  color: #e67e00;
+}
+
+/* Interior page back link */
+.back {
+  padding-top: 20px;
+  font-size: 15px;
+}
+
+.back a {
+  color: #111;
+  text-decoration: underline;
+}
+
+.back a:hover {
+  color: #000;
+}
+
+/* Typography */
+h1, h2, h3, h4 {
+  font-family: inherit;
+  font-weight: 700;
+  color: #111;
+  line-height: 1.25;
+}
+
+h1 {
+  font-size: 22px;
+  margin: 24px 0 12px;
+}
+
+h2 {
+  font-size: 18px;
+  margin: 28px 0 10px;
+}
+
+h3 {
+  font-size: 16px;
+  margin: 20px 0 8px;
+}
+
+p {
+  margin: 0 0 14px;
+  line-height: 1.55;
+}
+
+a {
+  color: #111;
+  text-decoration: underline;
+}
+
+a:visited {
+  color: #111;
+}
+
+a:hover {
+  color: #000;
+}
+
+strong, b {
+  font-weight: 700;
+}
+
+em, i {
+  font-style: italic;
+}
+
+ul, ol {
+  margin: 0 0 14px 26px;
+  line-height: 1.6;
+}
+
+ul li, ol li {
+  margin-bottom: 4px;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid #000;
+  margin: 28px 0;
+}
+
+/* Code */
+code, pre, kbd, samp {
+  font-family: inherit;
+}
+
+code {
+  background: #f4f4f4;
+  padding: 0 3px;
+  font-size: 14px;
+}
+
+pre {
+  background: #f7f7f7;
+  border: 1px solid #e0e0e0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 12px 0 16px;
+}
+
+pre code {
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* Sections */
+section {
+  margin-bottom: 28px;
+}
+
+.hero-text {
+  padding: 18px 0 6px;
+}
+
+.hero-text h1 {
+  font-size: 22px;
+  line-height: 1.3;
+  margin: 0 0 12px;
+  max-width: 760px;
+}
+
+.hero-text .tagline {
+  font-size: 16px;
+  margin: 0 0 8px;
+  max-width: 760px;
+}
+
+.hero-text .tagline--sub {
+  color: #444;
+  margin-top: 8px;
+  max-width: 760px;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin: 8px 0 16px;
+}
+
+th, td {
+  border: 1px solid #000;
+  padding: 6px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  font-weight: 700;
+  background: #f4f4f4;
+}
+
+.row-self td {
+  font-weight: 700;
+  background: #fff8e6;
+}
+
+.comparison-table {
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+.comparison-table .yes { color: #0a7a2f; }
+.comparison-table .no  { color: #a80000; }
+.comparison-table .partial { color: #9a6200; }
+.comparison-table .na  { color: #777; }
+
+/* Spec list: plain annotated links, no cards */
+.spec-list {
+  margin: 6px 0 16px;
+}
+
+.spec-card {
+  display: block;
+  padding: 10px 0;
+  color: inherit;
+  text-decoration: none;
+  border-top: 1px solid #ddd;
+}
+
+.spec-card:last-child {
+  border-bottom: 1px solid #ddd;
+}
+
+.spec-card .row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 2px;
+}
+
+.spec-title {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.spec-arrow {
+  margin-left: auto;
+  color: #777;
+}
+
+.spec-card:hover .spec-title {
+  color: #000;
+}
+
+.spec-card p {
+  margin: 4px 0 2px;
+  font-size: 15px;
+}
+
+.spec-card .meta {
+  color: #666;
+  font-size: 13px;
+  margin: 2px 0 0;
+}
+
+/* Badges: plain bracketed text, no chrome */
+.badge {
+  display: inline;
+  font-size: 13px;
+  font-weight: 700;
+  font-style: italic;
+  color: #666;
+}
+
+.badge::before { content: "["; font-style: normal; }
+.badge::after  { content: "]"; font-style: normal; }
+
+.badge--draft { color: #9a6200; }
+.badge--stub  { color: #666; }
+
+/* CTA row: plain underlined links, not buttons */
+.cta-row {
+  margin: 12px 0;
+  font-size: 16px;
+}
+
+.cta {
+  color: #111;
+  text-decoration: underline;
+  margin-right: 18px;
+}
+
+.cta:hover { color: #000; }
+
+.cta--primary {
+  font-weight: 700;
+}
+
+/* Notes */
+.note {
+  color: #444;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.note--xs {
+  color: #555;
+  font-size: 13px;
+}
+
+/* Footer */
+footer {
+  padding: 32px 0 64px;
+  margin-top: 36px;
+  border-top: 1px solid #000;
+  color: #555;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.footer-inner {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px 24px;
+  align-items: start;
+}
+
+.footer-about {
+  max-width: 620px;
+}
+
+.footer-about a {
+  color: #333;
+  text-decoration: underline;
+}
+
+.footer-about a:hover { color: #000; }
+
+.footer-links {
+  white-space: nowrap;
+}
+
+.footer-links a {
+  color: #555;
+  text-decoration: underline;
+  margin-left: 14px;
+}
+
+.footer-links a:first-child { margin-left: 0; }
+.footer-links a:hover { color: #000; }
+
+@media (max-width: 720px) {
+  .footer-inner { grid-template-columns: 1fr; }
+}
+
+/* RFC-style header block on spec pages */
+.rfc-header {
+  border: 1px solid #000;
+  padding: 10px 14px;
+  margin: 20px 0 20px;
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre;
+  overflow-x: auto;
+  background: #fff;
+}
+
+/* Field definition lists on spec pages */
+dl {
+  margin: 8px 0 14px;
+}
+
+dt {
+  font-weight: 700;
+  margin-top: 14px;
+  font-size: 15px;
+}
+
+dt:first-child { margin-top: 0; }
+
+dd {
+  font-size: 15px;
+  line-height: 1.55;
+  margin: 2px 0 0 22px;
+}
+
+/* Inline field tags on spec pages (REQUIRED/OPTIONAL/CONDITIONAL) */
+.field-tag {
+  display: inline;
+  font-weight: 700;
+  font-size: 12px;
+  font-style: italic;
+  color: #666;
+  margin-left: 6px;
+}
+
+.field-tag::before { content: "("; font-style: normal; }
+.field-tag::after  { content: ")"; font-style: normal; }
+
+.field-tag.required    { color: #a80000; }
+.field-tag.optional    { color: #666;    }
+.field-tag.conditional { color: #9a6200; }
+
+/* Small screens */
+@media (max-width: 640px) {
+  html, body { font-size: 15px; }
+  .container { padding: 0 20px; }
+  .top { padding: 48px 0 20px; }
+  .top .mark img { max-width: 340px; }
+  .top .nav { font-size: 14px; }
+  .top .nav .sep { padding: 0 4px; }
+  h1, .hero-text h1 { font-size: 20px; }
+  h2 { font-size: 17px; }
+  pre { font-size: 12px; padding: 12px; }
+  table { font-size: 13px; }
+  th, td { padding: 5px 8px; }
+}

@@ -1,0 +1,126 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+<Base title="Cryptographic Attestation of Consent (CAC) v0.1 — Machine Authority Protocol" description="Specification for the signed authorization receipt in the Machine Authority Protocol.">
+  <div class="container">
+    <div class="rfc-header">Machine Authority Protocol                        Draft
+Cryptographic Attestation of Consent (CAC) v0.1
+Status: DRAFT STUB
+Published: 2026-05-02</div>
+
+    <section>
+      <h2>Abstract</h2>
+      <p>The Cryptographic Attestation of Consent is the signed receipt produced when an action is authorized &mdash; either automatically (ALLOW) or after human approval (DEFER &rarr; APPROVE). A CAC binds the action hash, approver identity, decision, timestamp, and policy version into a tamper-evident token verifiable by any auditor offline against the original CAR. This document specifies the CAC format.</p>
+    </section>
+
+    <section>
+      <h2>Status</h2>
+      <p>Stub. Field definitions are stable. Signature algorithm and token encoding details (JWT vs. CBOR vs. JSON-LD) are under discussion.</p>
+    </section>
+
+    <section>
+      <h2>1. Introduction</h2>
+      <p>OAuth session tokens can be stolen, replayed, or hijacked. A CAC is not an access token &mdash; it is an audit receipt. It proves that a specific action (identified by its CAR hash) was authorized under a specific policy version by a specific approver at a specific time. It cannot be reused for a different action. The CIBA (Client-Initiated Backchannel Authentication) pattern is the closest existing analogue, but CIBA covers end-user authentication, not action authorization, and produces an access token rather than a verifiable receipt.</p>
+    </section>
+
+    <section>
+      <h2>2. CAC fields</h2>
+      <div class="comparison-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Required</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>car_hash</code></td>
+              <td>string</td>
+              <td>REQUIRED</td>
+              <td>SHA-256 of the canonical CAR JSON (hex-encoded)</td>
+            </tr>
+            <tr>
+              <td><code>decision</code></td>
+              <td>string</td>
+              <td>REQUIRED</td>
+              <td>ALLOW or APPROVE</td>
+            </tr>
+            <tr>
+              <td><code>approver_identity</code></td>
+              <td>string</td>
+              <td>REQUIRED</td>
+              <td>Identity of the authorizing entity (SPIFFE SVID, DID, or email)</td>
+            </tr>
+            <tr>
+              <td><code>approver_signature</code></td>
+              <td>string</td>
+              <td>REQUIRED</td>
+              <td>Ed25519 signature over <code>car_hash</code> + <code>decision</code> + <code>decided_at</code> + <code>policy_version</code></td>
+            </tr>
+            <tr>
+              <td><code>decided_at</code></td>
+              <td>string (ISO 8601)</td>
+              <td>REQUIRED</td>
+              <td>When the authorization decision was made</td>
+            </tr>
+            <tr>
+              <td><code>policy_version</code></td>
+              <td>string</td>
+              <td>REQUIRED</td>
+              <td>MUST match the <code>policy_version</code> from the Decision Envelope</td>
+            </tr>
+            <tr>
+              <td><code>session_id</code></td>
+              <td>string</td>
+              <td>REQUIRED</td>
+              <td>MUST match the <code>session_id</code> from the CAR</td>
+            </tr>
+            <tr>
+              <td><code>action_id</code></td>
+              <td>string</td>
+              <td>REQUIRED</td>
+              <td>MUST match the <code>action_id</code> from the CAR</td>
+            </tr>
+            <tr>
+              <td><code>encoding</code></td>
+              <td>string</td>
+              <td>REQUIRED</td>
+              <td>"jwt", "cbor", or "json" — TBD</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Verification algorithm</h2>
+      <p>A CAC verifier accepts a CAC and the original CAR and returns true iff all of the following hold:</p>
+      <ol>
+        <li>Compute SHA-256 over the canonical JSON serialization of the CAR (RFC 8785, JCS). Verify it equals <code>car_hash</code>.</li>
+        <li>Verify <code>action_id</code> and <code>session_id</code> in the CAC match the corresponding CAR fields.</li>
+        <li>Resolve <code>approver_identity</code> to a public key (SPIFFE trust bundle, DID document, or configured PKI).</li>
+        <li>Verify the Ed25519 <code>approver_signature</code> over <code>(car_hash || decision || decided_at || policy_version)</code>.</li>
+        <li>Verify <code>decision</code> is <code>ALLOW</code> or <code>APPROVE</code>. Any other value fails verification.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>4. Open questions</h2>
+      <ul>
+        <li>Token encoding: JWT (familiar, broad tooling) vs CBOR (compact, IETF-native) vs plain JSON + detached signature</li>
+        <li>Approver key distribution: how does a verifier find the approver's public key?</li>
+        <li>WIMSE WG (chartered March 2024) explicitly flags "how users cryptographically approve agent credentials" as an open question &mdash; CAC is the answer this spec intends to provide</li>
+        <li>Hardware binding: should CAC require HSM-backed keys for high-risk actions?</li>
+        <li>Post-quantum migration: Ed25519 vs. hybrid with ML-DSA</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>5. Reference verifier (planned)</h2>
+      <p>A Python reference verifier will be published at <a href="https://github.com/machineauthority/protocol" target="_blank" rel="noopener"><code>github.com/machineauthority/protocol/tools/cac-verify.py</code></a>. A conformance test vector suite (CAR payload + CAC + expected verification result) is planned alongside.</p>
+    </section>
+  </div>
+</Base>

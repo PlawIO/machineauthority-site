@@ -1,0 +1,45 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Governance — Machine Authority Protocol" description="Governance structure for the Machine Authority Protocol.">
+  <div class="container">
+    <section class="hero-text">
+      <h1>Governance</h1>
+      <p class="tagline">How the Machine Authority Protocol is stewarded.</p>
+    </section>
+
+    <hr />
+
+    <section>
+      <h2>Principles</h2>
+      <ol>
+        <li><strong>Neutral ownership.</strong> The specification is published under the MIT license and is the property of no single vendor. Normative text, schemas, and test vectors belong to the protocol, not to any contributing company.</li>
+        <li><strong>No single-org majority.</strong> No single organization &mdash; including the initiating sponsor, <a href="https://plaw.io" target="_blank" rel="noopener">Plaw,&nbsp;Inc.</a> &mdash; controls a majority of maintainer seats on the council. Enforced by <a href="https://github.com/machineauthority/protocol/blob/main/GOVERNANCE.md" target="_blank" rel="noopener">GOVERNANCE.md</a> in the specification repository.</li>
+        <li><strong>Open process.</strong> All spec changes go through public PRs and public discussion. Private channels are not permitted to advance normative text.</li>
+        <li><strong>Stability pledge.</strong> Once a spec reaches v1.0, breaking changes require a 12&ndash;month deprecation window.</li>
+      </ol>
+    </section>
+
+    <hr />
+
+    <section>
+      <h2>Origin &amp; independence</h2>
+      <p>Machine Authority Protocol was initiated by <a href="https://plaw.io" target="_blank" rel="noopener">Plaw,&nbsp;Inc.</a> during its development of <a href="https://veto.so" target="_blank" rel="noopener">Veto</a>, a commercial action-authorization platform. The gap was identified, the first drafts were written, and the initial maintainers were seeded by Plaw &mdash; in the same way SPIFFE was seeded by Scytale, OpenTelemetry by Google/LightStep/Microsoft/Uber, and Sigstore by Red Hat/Google/Purdue.</p>
+      <p>From v0.1 onward the specification is governed independently: Plaw&rsquo;s maintainers hold at most a plurality on the council, never a majority; the specification repository lives at <a href="https://github.com/machineauthority/protocol" target="_blank" rel="noopener">github.com/machineauthority/protocol</a> under the neutral <code>machineauthority</code> GitHub organization, not under Plaw; and the spec is MIT-licensed so no rights revert to Plaw.</p>
+    </section>
+
+    <hr />
+
+    <section>
+      <h2>Status</h2>
+      <p>Founding contributor recruitment is in progress. Publishing the v0.1 draft specifications is the first call; organizations interested in co-maintainership of any of the three specifications can open a Discussion on <a href="https://github.com/machineauthority/protocol/discussions" target="_blank" rel="noopener">GitHub</a>.</p>
+    </section>
+
+    <hr />
+
+    <section>
+      <h2>Reference implementation</h2>
+      <p><a href="https://veto.so" target="_blank" rel="noopener">Veto</a> (Plaw, Inc.) is a reference implementation of the Machine Authority Protocol. It is a conformant implementation &mdash; not the standard itself. The relationship is the same as Cedar to Amazon, SPIRE to SPIFFE, or Cosign to Sigstore.</p>
+    </section>
+  </div>
+</Base>

@@ -1,0 +1,805 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+<Base title="CAR v0.1 — Machine Authority Protocol" description="Canonical Action Representation v0.1 draft specification. The serializable schema for a proposed AI agent tool call, submitted to the Action Authorization Boundary for evaluation.">
+  <div class="container spec-page">
+    <div class="rfc-header">Machine Authority Protocol                                           Draft
+Canonical Action Representation (CAR) v0.1
+Status: DRAFT — not for production use
+Published: 2026-05-02</div>
+
+      <section id="abstract">
+        <h2>Abstract</h2>
+        <p>
+          The Canonical Action Representation (CAR) is a standardized, serializable schema for describing
+          a proposed AI agent tool call before it executes. A CAR payload encodes the tool name, typed
+          arguments, actor identity, delegation chain, session context, and timestamp in a vendor-neutral
+          format that any policy engine, audit log, or approval interface can consume. The CAR is the
+          input to the Action Authorization Boundary: the enforcement point evaluates a CAR and returns
+          a Decision Envelope (ALLOW / DENY / DEFER / REVOKE).
+        </p>
+      </section>
+
+      <section id="status">
+        <h2>Status of This Document</h2>
+        <p>
+          This document is a Draft specification of the Machine Authority Protocol. It has not been
+          reviewed by any standards body. Feedback is invited via
+          <a href="https://github.com/machineauthority/protocol/issues" target="_blank" rel="noopener">GitHub Issues</a>.
+          This document may change before finalization.
+        </p>
+      </section>
+
+      <section id="introduction">
+        <h2>1. Introduction</h2>
+        <p>
+          When an AI agent decides to invoke a tool — call an API, write a file, execute a query — the
+          reasoning that produced that decision is probabilistic. The action itself is deterministic.
+          Identity protocols verify who the agent is. Policy engines evaluate whether a rule says allow.
+          But neither defines a common format for representing the proposed action itself, nor a standard
+          decision state for deferring it to asynchronous human approval.
+        </p>
+        <p>
+          The Canonical Action Representation fills this gap. CAR is the lingua franca of the Action
+          Authorization Boundary: it can be produced by any agent framework, evaluated by any policy
+          engine, logged by any audit system, and rendered by any approval interface — without
+          vendor-specific schemas or proprietary wire formats.
+        </p>
+      </section>
+
+      <section id="conventions">
+        <h2>2. Conventions</h2>
+        <p>
+          The key words <strong>MUST</strong>, <strong>MUST NOT</strong>, <strong>REQUIRED</strong>,
+          <strong>SHALL</strong>, <strong>SHALL NOT</strong>, <strong>SHOULD</strong>,
+          <strong>SHOULD NOT</strong>, <strong>RECOMMENDED</strong>, <strong>NOT RECOMMENDED</strong>,
+          <strong>MAY</strong>, and <strong>OPTIONAL</strong> in this document are to be interpreted as
+          described in RFC 2119.
+        </p>
+      </section>
+
+      <section id="terminology">
+        <h2>3. Terminology</h2>
+        <dl>
+          <dt>Action Authorization Boundary (AAB)</dt>
+          <dd>
+            The mandatory enforcement layer between an agent's reasoning and real-world execution.
+            Evaluates a CAR and produces a Decision Envelope.
+          </dd>
+
+          <dt>Canonical Action Representation (CAR)</dt>
+          <dd>
+            A serialized JSON object describing a proposed tool call. The input to the AAB.
+          </dd>
+
+          <dt>Decision Envelope</dt>
+          <dd>
+            The response from the AAB to a submitted CAR. Contains one of four states: ALLOW, DENY,
+            DEFER, or REVOKE.
+          </dd>
+
+          <dt>Actor</dt>
+          <dd>
+            The AI agent or system submitting a CAR for evaluation.
+          </dd>
+
+          <dt>Delegating Principal</dt>
+          <dd>
+            The human or system that authorized the actor to act. MUST be included when the actor acts
+            on behalf of a principal.
+          </dd>
+
+          <dt>Enforcement Point</dt>
+          <dd>
+            The component that receives a CAR, submits it to the AAB, and either executes the action
+            (ALLOW), blocks it (DENY), or suspends it (DEFER).
+          </dd>
+
+          <dt>Approver</dt>
+          <dd>
+            The human or system that reviews a deferred action and produces a signed ApprovalDecision.
+          </dd>
+
+          <dt>Resume Token</dt>
+          <dd>
+            An opaque string issued with a DEFER decision that allows the enforcement point to poll for
+            or receive the ApprovalDecision.
+          </dd>
+        </dl>
+      </section>
+
+      <section id="car-schema">
+        <h2>4. CAR Schema</h2>
+        <p>
+          A CAR is a JSON object. All fields listed as REQUIRED in this section MUST be present. Fields
+          marked OPTIONAL MAY be omitted. The schema is identified by the URI
+          <code>https://machineauthority.org/schema/car/v0.1</code> and validates against JSON Schema
+          Draft 2020-12.
+        </p>
+
+        <h3>4.1 Top-Level Fields</h3>
+
+        <dl>
+          <dt>car_version <span class="field-tag required">REQUIRED</span></dt>
+          <dd>
+            String. MUST be <code>"0.1"</code> for this specification. Enforcement points MUST reject
+            CARs with unrecognized version values.
+          </dd>
+
+          <dt>action_id <span class="field-tag required">REQUIRED</span></dt>
+          <dd>
+            String (UUID v4). Uniquely identifies this proposed action. MUST be generated by the
+            enforcement point immediately before submission. MUST NOT be reused across distinct
+            proposed actions, including retries.
+          </dd>
+
+          <dt>tool_name <span class="field-tag required">REQUIRED</span></dt>
+          <dd>
+            String. The fully-qualified name of the tool being invoked. SHOULD follow the format
+            <code>&#123;namespace&#125;/&#123;tool&#125;</code> (e.g., <code>stripe/charge_card</code>,
+            <code>github/create_pr</code>). For MCP tools, this MUST match the tool name in the MCP
+            server manifest.
+          </dd>
+
+          <dt>arguments <span class="field-tag required">REQUIRED</span></dt>
+          <dd>
+            Object. The typed arguments passed to the tool. MUST contain all arguments the tool will
+            receive at execution. MUST NOT be redacted or summarized. Policy engines depend on the
+            completeness and accuracy of this field for evaluation.
+          </dd>
+
+          <dt>actor <span class="field-tag required">REQUIRED</span></dt>
+          <dd>
+            Object. Identifies the agent submitting this CAR. See Section 4.2.
+          </dd>
+
+          <dt>session_id <span class="field-tag required">REQUIRED</span></dt>
+          <dd>
+            String. An opaque identifier for the agent session in which this action occurs. MUST be
+            stable across all CARs generated within a single agent run. Used to correlate related
+            actions in audit logs.
+          </dd>
+
+          <dt>timestamp <span class="field-tag required">REQUIRED</span></dt>
+          <dd>
+            String (ISO 8601, UTC). The time at which the CAR was generated by the enforcement point.
+            MUST be within a reasonable skew tolerance of actual wall-clock time.
+          </dd>
+
+          <dt>policy_context <span class="field-tag optional">OPTIONAL</span></dt>
+          <dd>
+            Object. Additional context the policy engine may use for evaluation. Contents are
+            policy-engine-specific. Common fields: <code>environment</code> (string),
+            <code>risk_tier</code> (string), <code>mcp_server_id</code> (string).
+          </dd>
+
+          <dt>task_id <span class="field-tag optional">OPTIONAL</span></dt>
+          <dd>
+            String. For A2A-based agent workflows: the A2A task ID that produced this action.
+          </dd>
+
+          <dt>mcp_tool_call_id <span class="field-tag optional">OPTIONAL</span></dt>
+          <dd>
+            String. For MCP-based agent workflows: the MCP <code>tool_call_id</code> from the
+            originating request.
+          </dd>
+        </dl>
+
+        <h3>4.2 The actor Object</h3>
+
+        <dl>
+          <dt>actor.identity <span class="field-tag required">REQUIRED</span></dt>
+          <dd>
+            Object. The cryptographic identity of the acting agent, expressed as a discriminated
+            union. MUST contain a <code>type</code> field selecting the identity scheme and a
+            scheme-specific payload. The three schemes defined by this specification are:
+            <br /><br />
+            <code>&#123; "type": "spiffe", "uri": "spiffe://acme.com/agents/billing" &#125;</code>
+            &mdash; SPIFFE SVID URI (RFC X.509-SVID or JWT-SVID).
+            <br /><br />
+            <code>&#123; "type": "did", "did": "did:web:acme.com:agents:billing" &#125;</code>
+            &mdash; W3C Decentralized Identifier.
+            <br /><br />
+            <code>&#123; "type": "url", "url": "https://acme.com/.well-known/agent-id/billing" &#125;</code>
+            &mdash; HTTPS URL resolving to a signed agent identity document.
+            <br /><br />
+            Implementations MUST reject CARs with unknown <code>type</code> values. Future
+            revisions MAY register additional identity types via the Machine Authority Protocol
+            registry.
+          </dd>
+
+          <dt>actor.delegation_chain <span class="field-tag optional">OPTIONAL</span></dt>
+          <dd>
+            Array of <code>actor.identity</code> objects. Ordered list of principals that delegated
+            authority to this actor. MUST be present when the actor acts on behalf of a human or
+            upstream agent. Each entry MUST conform to the <code>actor.identity</code> discriminated
+            union. The first entry is the outermost delegating principal; the last entry is the
+            immediate delegator. Maximum depth: 8.
+          </dd>
+
+          <dt>actor.agent_version <span class="field-tag optional">OPTIONAL</span></dt>
+          <dd>
+            String. Semantic version of the agent software. RECOMMENDED for audit purposes.
+          </dd>
+        </dl>
+
+        <h3>4.3 Full JSON Schema</h3>
+
+        <pre><code>&#123;
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://machineauthority.org/schema/car/v0.1",
+  "title": "Canonical Action Representation",
+  "description": "A serialized description of a proposed AI agent tool call, submitted to the Action Authorization Boundary for evaluation.",
+  "type": "object",
+  "required": ["car_version", "action_id", "tool_name", "arguments", "actor", "session_id", "timestamp"],
+  "properties": &#123;
+    "car_version": &#123;
+      "type": "string",
+      "enum": ["0.1"],
+      "description": "REQUIRED. Version of the CAR schema. MUST be '0.1' for this specification."
+    &#125;,
+    "action_id": &#123;
+      "type": "string",
+      "format": "uuid",
+      "description": "REQUIRED. A UUID v4 uniquely identifying this proposed action. MUST be generated by the enforcement point. MUST NOT be reused."
+    &#125;,
+    "tool_name": &#123;
+      "type": "string",
+      "description": "REQUIRED. The fully-qualified name of the tool being invoked. SHOULD follow the format '&#123;namespace&#125;/&#123;tool&#125;' (e.g., 'stripe/charge_card', 'github/create_pr'). For MCP tools, this MUST match the tool name in the MCP server manifest."
+    &#125;,
+    "arguments": &#123;
+      "type": "object",
+      "description": "REQUIRED. The typed arguments passed to the tool. MUST contain all arguments the tool will receive at execution. MUST NOT be redacted or summarized.",
+      "additionalProperties": true
+    &#125;,
+    "actor": &#123;
+      "type": "object",
+      "required": ["identity"],
+      "description": "REQUIRED. Identifies the agent submitting this CAR.",
+      "properties": &#123;
+        "identity": &#123; "$ref": "#/$defs/identity" &#125;,
+        "delegation_chain": &#123;
+          "type": "array",
+          "description": "OPTIONAL. Ordered list of principals that delegated authority to this actor. Max depth 8.",
+          "items": &#123; "$ref": "#/$defs/identity" &#125;,
+          "maxItems": 8
+        &#125;,
+        "agent_version": &#123;
+          "type": "string",
+          "description": "OPTIONAL. Semantic version of the agent software. RECOMMENDED for audit purposes."
+        &#125;
+      &#125;
+    &#125;,
+    "session_id": &#123;
+      "type": "string",
+      "description": "REQUIRED. An opaque string identifying the agent session in which this action occurs. MUST be stable across all CARs in a single agent run."
+    &#125;,
+    "timestamp": &#123;
+      "type": "string",
+      "format": "date-time",
+      "description": "REQUIRED. ISO 8601 timestamp (UTC) at which the CAR was generated by the enforcement point."
+    &#125;,
+    "policy_context": &#123;
+      "type": "object",
+      "description": "OPTIONAL. Additional context the policy engine may use for evaluation. Contents are policy-engine-specific. Common fields: 'environment' (string), 'risk_tier' (string), 'mcp_server_id' (string).",
+      "additionalProperties": true
+    &#125;,
+    "task_id": &#123;
+      "type": "string",
+      "description": "OPTIONAL. For A2A-based agent workflows: the A2A task ID that produced this action."
+    &#125;,
+    "mcp_tool_call_id": &#123;
+      "type": "string",
+      "description": "OPTIONAL. For MCP-based agent workflows: the MCP tool_call_id from the originating request."
+    &#125;
+  &#125;,
+  "$defs": &#123;
+    "identity": &#123;
+      "description": "Discriminated union for agent identity. 'type' selects the scheme.",
+      "oneOf": [
+        &#123;
+          "type": "object",
+          "required": ["type", "uri"],
+          "properties": &#123;
+            "type": &#123; "const": "spiffe" &#125;,
+            "uri": &#123; "type": "string", "pattern": "^spiffe://" &#125;
+          &#125;
+        &#125;,
+        &#123;
+          "type": "object",
+          "required": ["type", "did"],
+          "properties": &#123;
+            "type": &#123; "const": "did" &#125;,
+            "did":  &#123; "type": "string", "pattern": "^did:" &#125;
+          &#125;
+        &#125;,
+        &#123;
+          "type": "object",
+          "required": ["type", "url"],
+          "properties": &#123;
+            "type": &#123; "const": "url" &#125;,
+            "url":  &#123; "type": "string", "format": "uri", "pattern": "^https://" &#125;
+          &#125;
+        &#125;
+      ]
+    &#125;
+  &#125;
+&#125;</code></pre>
+      </section>
+
+      <section id="decision-envelope">
+        <h2>5. Decision Envelope</h2>
+        <p>
+          When an enforcement point submits a CAR to the AAB, the AAB MUST respond with a Decision
+          Envelope. The Decision Envelope is a JSON object identified by the URI
+          <code>https://machineauthority.org/schema/decision-envelope/v0.1</code>.
+        </p>
+
+        <h3>5.1 Decision States</h3>
+        <dl>
+          <dt>ALLOW</dt>
+          <dd>
+            The action is authorized. The enforcement point MAY proceed to execution. MUST check
+            <code>expires_at</code> before executing; an expired ALLOW MUST be treated as DENY.
+          </dd>
+
+          <dt>DENY</dt>
+          <dd>
+            The action is not authorized. The enforcement point MUST NOT execute. MUST surface the
+            <code>reason_code</code> and <code>reason_detail</code> to the agent so it can adapt or
+            halt.
+          </dd>
+
+          <dt>DEFER</dt>
+          <dd>
+            The action requires human (or upstream) approval before it may proceed. The enforcement
+            point MUST suspend execution, preserve session state, and poll or subscribe to the
+            <code>approver_endpoint</code> using the <code>resume_token</code> until an
+            ApprovalDecision is received or <code>defer_payload.expires_at</code> is reached. If
+            approval is not received by that time, the enforcement point MUST treat the action as DENY.
+          </dd>
+
+          <dt>REVOKE</dt>
+          <dd>
+            A previously ALLOWed action has been revoked. The enforcement point MUST abort execution
+            immediately if in progress. MUST NOT retry the action without submitting a new CAR.
+          </dd>
+        </dl>
+
+        <h3>5.2 Decision Envelope Fields</h3>
+
+        <dl>
+          <dt>decision <span class="field-tag required">REQUIRED</span></dt>
+          <dd>
+            String. One of: <code>ALLOW</code>, <code>DENY</code>, <code>DEFER</code>,
+            <code>REVOKE</code>.
+          </dd>
+
+          <dt>action_id <span class="field-tag required">REQUIRED</span></dt>
+          <dd>
+            String (UUID v4). MUST match the <code>action_id</code> from the submitted CAR.
+            Enforcement points MUST verify this match before acting on the decision.
+          </dd>
+
+          <dt>evaluated_at <span class="field-tag required">REQUIRED</span></dt>
+          <dd>
+            String (ISO 8601, UTC). The timestamp at which the decision was made.
+          </dd>
+
+          <dt>policy_version <span class="field-tag required">REQUIRED</span></dt>
+          <dd>
+            String. An opaque version string identifying the policy under which this decision was made.
+            Used in Cryptographic Attestation of Consent. MUST be recorded in audit logs.
+          </dd>
+
+          <dt>expires_at <span class="field-tag conditional">CONDITIONAL</span></dt>
+          <dd>
+            String (ISO 8601). REQUIRED when <code>decision</code> is <code>ALLOW</code>. The
+            enforcement point MUST NOT execute the action after this timestamp.
+          </dd>
+
+          <dt>reason_code <span class="field-tag conditional">CONDITIONAL</span></dt>
+          <dd>
+            String. REQUIRED when <code>decision</code> is <code>DENY</code> or
+            <code>REVOKE</code>. A machine-readable code identifying why the action was denied.
+          </dd>
+
+          <dt>reason_detail <span class="field-tag optional">OPTIONAL</span></dt>
+          <dd>
+            String. Human-readable explanation of the denial or revocation reason.
+          </dd>
+
+          <dt>defer_payload <span class="field-tag conditional">CONDITIONAL</span></dt>
+          <dd>
+            Object. REQUIRED when <code>decision</code> is <code>DEFER</code>. See Section 5.3.
+          </dd>
+        </dl>
+
+        <h3>5.3 The defer_payload Object</h3>
+        <dl>
+          <dt>defer_payload.resume_token <span class="field-tag required">REQUIRED</span></dt>
+          <dd>
+            String. An opaque token the enforcement point uses to poll for or receive the
+            ApprovalDecision. MUST be treated as a secret in transit.
+          </dd>
+
+          <dt>defer_payload.approver_endpoint <span class="field-tag required">REQUIRED</span></dt>
+          <dd>
+            String (URI). The HTTPS URL of the approver interface that will render and process this
+            action. MUST use HTTPS.
+          </dd>
+
+          <dt>defer_payload.expires_at <span class="field-tag required">REQUIRED</span></dt>
+          <dd>
+            String (ISO 8601). If approval is not received by this time, the enforcement point MUST
+            treat the action as DENY.
+          </dd>
+
+          <dt>defer_payload.approver_hint <span class="field-tag optional">OPTIONAL</span></dt>
+          <dd>
+            String. Human-readable description of who should approve this action. Not authoritative;
+            for display purposes only.
+          </dd>
+        </dl>
+
+        <h3>5.4 Full Decision Envelope JSON Schema</h3>
+
+        <pre><code>&#123;
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://machineauthority.org/schema/decision-envelope/v0.1",
+  "title": "Decision Envelope",
+  "description": "The response from the Action Authorization Boundary to a submitted CAR.",
+  "type": "object",
+  "required": ["decision", "action_id", "evaluated_at", "policy_version"],
+  "properties": &#123;
+    "decision": &#123;
+      "type": "string",
+      "enum": ["ALLOW", "DENY", "DEFER", "REVOKE"],
+      "description": "REQUIRED. The authorization decision."
+    &#125;,
+    "action_id": &#123;
+      "type": "string",
+      "format": "uuid",
+      "description": "REQUIRED. MUST match the action_id from the submitted CAR."
+    &#125;,
+    "evaluated_at": &#123;
+      "type": "string",
+      "format": "date-time",
+      "description": "REQUIRED. ISO 8601 timestamp at which the decision was made."
+    &#125;,
+    "policy_version": &#123;
+      "type": "string",
+      "description": "REQUIRED. An opaque version string identifying the policy under which this decision was made. Used in Cryptographic Attestation of Consent."
+    &#125;,
+    "expires_at": &#123;
+      "type": "string",
+      "format": "date-time",
+      "description": "CONDITIONAL. REQUIRED when decision is ALLOW. The enforcement point MUST NOT execute the action after this timestamp."
+    &#125;,
+    "reason_code": &#123;
+      "type": "string",
+      "description": "CONDITIONAL. REQUIRED when decision is DENY or REVOKE. A machine-readable code identifying why the action was denied."
+    &#125;,
+    "reason_detail": &#123;
+      "type": "string",
+      "description": "OPTIONAL. Human-readable explanation of the denial reason."
+    &#125;,
+    "defer_payload": &#123;
+      "type": "object",
+      "description": "CONDITIONAL. REQUIRED when decision is DEFER. Contains the information needed to route the action to an approver.",
+      "required": ["resume_token", "approver_endpoint", "expires_at"],
+      "properties": &#123;
+        "resume_token": &#123;
+          "type": "string",
+          "description": "An opaque token the enforcement point uses to poll for or receive the ApprovalDecision."
+        &#125;,
+        "approver_endpoint": &#123;
+          "type": "string",
+          "format": "uri",
+          "description": "The HTTPS URL of the approver interface that will render and process this action."
+        &#125;,
+        "expires_at": &#123;
+          "type": "string",
+          "format": "date-time",
+          "description": "If approval is not received by this time, the enforcement point MUST treat the action as DENY."
+        &#125;,
+        "approver_hint": &#123;
+          "type": "string",
+          "description": "OPTIONAL. Human-readable description of who should approve this action."
+        &#125;
+      &#125;
+    &#125;
+  &#125;
+&#125;</code></pre>
+      </section>
+
+      <section id="examples">
+        <h2>6. Example Payloads</h2>
+
+        <h3>6.1 ALLOW — Filesystem Read</h3>
+        <p>
+          A data pipeline agent reads a configuration file. The operation is read-only and within the
+          agent's granted scope; the AAB returns ALLOW with a 30-second expiry.
+        </p>
+
+        <p class="example-label">CAR Payload</p>
+        <pre><code>&#123;
+  "car_version": "0.1",
+  "action_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "tool_name": "filesystem/read_file",
+  "arguments": &#123;
+    "path": "/var/app/config.json",
+    "encoding": "utf-8"
+  &#125;,
+  "actor": &#123;
+    "identity": &#123; "type": "spiffe", "uri": "spiffe://acme.com/agents/data-pipeline/prod" &#125;,
+    "delegation_chain": [
+      &#123; "type": "did", "did": "did:web:acme.com:users:alice" &#125;
+    ]
+  &#125;,
+  "session_id": "sess_7f3k2m9p",
+  "timestamp": "2026-05-02T14:23:07Z"
+&#125;</code></pre>
+
+        <p class="example-label">Decision Envelope</p>
+        <pre><code>&#123;
+  "decision": "ALLOW",
+  "action_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "evaluated_at": "2026-05-02T14:23:07.042Z",
+  "policy_version": "prod-policy-v2.4.1",
+  "expires_at": "2026-05-02T14:23:37Z"
+&#125;</code></pre>
+
+        <h3>6.2 DEFER — Financial Transfer Requiring Human Approval</h3>
+        <p>
+          A finance agent attempts a wire transfer of $475.00 on behalf of a human principal through
+          an orchestrator. The operation exceeds the autonomous approval threshold; the AAB returns
+          DEFER and routes to the finance team lead for review.
+        </p>
+
+        <p class="example-label">CAR Payload</p>
+        <pre><code>&#123;
+  "car_version": "0.1",
+  "action_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+  "tool_name": "stripe/create_transfer",
+  "arguments": &#123;
+    "amount": 47500,
+    "currency": "usd",
+    "destination": "acct_1Rab2kLkdIwHu7ix",
+    "description": "Invoice #2847 settlement"
+  &#125;,
+  "actor": &#123;
+    "identity": &#123; "type": "spiffe", "uri": "spiffe://acme.com/agents/finance-agent/prod" &#125;,
+    "delegation_chain": [
+      &#123; "type": "did", "did": "did:web:acme.com:users:bob" &#125;,
+      &#123; "type": "spiffe", "uri": "spiffe://acme.com/agents/orchestrator/prod" &#125;
+    ],
+    "agent_version": "2.1.4"
+  &#125;,
+  "session_id": "sess_9g4m3n1q",
+  "timestamp": "2026-05-02T14:25:11Z",
+  "policy_context": &#123;
+    "risk_tier": "high",
+    "environment": "production"
+  &#125;
+&#125;</code></pre>
+
+        <p class="example-label">Decision Envelope</p>
+        <pre><code>&#123;
+  "decision": "DEFER",
+  "action_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+  "evaluated_at": "2026-05-02T14:25:11.018Z",
+  "policy_version": "prod-policy-v2.4.1",
+  "defer_payload": &#123;
+    "resume_token": "rt_7kXmQ9pN2vR4sT8wY1jL",
+    "approver_endpoint": "https://approvals.acme.com/review",
+    "expires_at": "2026-05-02T14:55:11Z",
+    "approver_hint": "Finance team lead (transfers > $400)"
+  &#125;
+&#125;</code></pre>
+
+        <h3>6.3 DENY — Destructive DDL Operation Outside Policy Bounds</h3>
+        <p>
+          A cleanup agent operating in staging identity attempts to DROP a table in the production
+          database. The AAB denies: the agent's identity scope does not include destructive DDL
+          operations on production, and no DEFER path is available for this reason code.
+        </p>
+
+        <p class="example-label">CAR Payload</p>
+        <pre><code>&#123;
+  "car_version": "0.1",
+  "action_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+  "tool_name": "database/execute_query",
+  "arguments": &#123;
+    "query": "DROP TABLE user_sessions",
+    "database": "production_db"
+  &#125;,
+  "actor": &#123;
+    "identity": &#123; "type": "spiffe", "uri": "spiffe://acme.com/agents/cleanup-agent/staging" &#125;
+  &#125;,
+  "session_id": "sess_2h5n4o2r",
+  "timestamp": "2026-05-02T14:27:33Z"
+&#125;</code></pre>
+
+        <p class="example-label">Decision Envelope</p>
+        <pre><code>&#123;
+  "decision": "DENY",
+  "action_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+  "evaluated_at": "2026-05-02T14:27:33.003Z",
+  "policy_version": "prod-policy-v2.4.1",
+  "reason_code": "DESTRUCTIVE_OP_NOT_AUTHORIZED",
+  "reason_detail": "DDL DROP operations on production databases require DEFER with DBA approval. This agent identity does not have destructive operation scope."
+&#125;</code></pre>
+      </section>
+
+      <section id="security">
+        <h2>7. Security Considerations</h2>
+
+        <h3>7.1 Action ID Uniqueness</h3>
+        <p>
+          CAR payloads MUST NOT be cached or reused. Each proposed action MUST produce a new
+          <code>action_id</code>. Policy engines may reject CARs with previously seen action IDs as
+          a replay defense.
+        </p>
+
+        <h3>7.2 Decision Envelope Binding</h3>
+        <p>
+          Enforcement points MUST verify that the <code>action_id</code> in the Decision Envelope
+          matches the submitted CAR before acting on the decision. A mismatch indicates a routing
+          error or active tampering; the enforcement point MUST abort and alert.
+        </p>
+
+        <h3>7.3 Argument Integrity</h3>
+        <p>
+          The <code>arguments</code> field MUST contain the exact arguments that will be passed to
+          the tool at execution. Any modification of arguments between evaluation and execution
+          invalidates the authorization. Enforcement points MUST pass the arguments field from the
+          CAR directly to the tool call without transformation.
+        </p>
+
+        <h3>7.4 ALLOW Expiry</h3>
+        <p>
+          When <code>decision</code> is <code>ALLOW</code>, the enforcement point MUST check
+          <code>expires_at</code> before execution. An expired ALLOW MUST be treated as DENY. The
+          enforcement point MUST NOT re-submit the original CAR to obtain a fresh decision; it MUST
+          generate a new CAR with a new <code>action_id</code>.
+        </p>
+
+        <h3>7.5 Actor Identity Verification</h3>
+        <p>
+          The <code>actor.identity</code> field SHOULD be verified against the cryptographic
+          credential presented by the agent (e.g., a SPIFFE SVID X.509 certificate, a signed DID
+          document). Unverified identity strings are advisory only and MUST NOT be treated as
+          authoritative by policy engines that require strong identity guarantees.
+        </p>
+
+        <h3>7.6 DEFER Expiry</h3>
+        <p>
+          DEFER decisions with expired resume tokens (past <code>defer_payload.expires_at</code>)
+          MUST be treated as DENY. The enforcement point MUST NOT proceed to execution on the basis
+          of an approval received after this deadline, even if the approver interface accepted the
+          approval.
+        </p>
+
+        <h3>7.7 Resume Token Confidentiality</h3>
+        <p>
+          The <code>resume_token</code> issued in a DEFER decision grants the ability to poll for or
+          receive an ApprovalDecision. It MUST be treated as a bearer secret: transmitted only over
+          TLS, stored with the same controls as session credentials, and invalidated by the AAB after
+          the decision is delivered or the expiry is reached.
+        </p>
+      </section>
+
+      <section id="iana">
+        <h2>8. IANA Considerations</h2>
+        <p>This document has no IANA actions.</p>
+      </section>
+
+      <section id="references">
+        <h2>9. References</h2>
+        <dl>
+          <dt>SPIFFE</dt>
+          <dd>
+            Secure Production Identity Framework for Everyone —
+            <a href="https://spiffe.io" target="_blank" rel="noopener">spiffe.io</a>
+          </dd>
+
+          <dt>RFC 2119</dt>
+          <dd>
+            Bradner, S., "Key words for use in RFCs to Indicate Requirement Levels", BCP 14,
+            RFC 2119, March 1997 —
+            <a href="https://www.rfc-editor.org/rfc/rfc2119" target="_blank" rel="noopener">rfc-editor.org</a>
+          </dd>
+
+          <dt>JSON Schema</dt>
+          <dd>
+            Wright, A. et al., "JSON Schema: A Media Type for Describing JSON Documents" —
+            <a href="https://json-schema.org" target="_blank" rel="noopener">json-schema.org</a>
+          </dd>
+
+          <dt>MCP Specification 2025-11-25</dt>
+          <dd>
+            Model Context Protocol specification —
+            <a href="https://modelcontextprotocol.io" target="_blank" rel="noopener">modelcontextprotocol.io</a>
+          </dd>
+
+          <dt>AARM</dt>
+          <dd>
+            Autonomous Action Runtime Management —
+            <a href="https://aarm.dev" target="_blank" rel="noopener">aarm.dev</a>
+          </dd>
+
+          <dt>Faramesh</dt>
+          <dd>
+            arXiv:2601.17744 — framework for agentic authorization mesh
+          </dd>
+
+          <dt>WIMSE WG</dt>
+          <dd>
+            IETF Workload Identity in Multi-System Environments Working Group —
+            <a href="https://datatracker.ietf.org/wg/wimse/about/" target="_blank" rel="noopener">datatracker.ietf.org</a>
+          </dd>
+
+          <dt>OWASP Top 10 for Agentic Applications 2026</dt>
+          <dd>
+            Open Web Application Security Project — Agentic AI threat classification —
+            <a href="https://owasp.org" target="_blank" rel="noopener">owasp.org</a>
+          </dd>
+        </dl>
+      </section>
+
+    <div class="spec-footer">
+      Feedback:
+      <a href="https://github.com/machineauthority/protocol/issues" target="_blank" rel="noopener">github.com/machineauthority/protocol/issues</a>
+      &nbsp;|&nbsp; MIT &nbsp;|&nbsp;
+      <a href="https://machineauthority.org">machineauthority.org</a>
+    </div>
+
+  </div>
+</Base>
+
+<style>
+  /* CAR spec page overrides */
+  .spec-page {
+    padding-bottom: 48px;
+  }
+
+  .spec-page section {
+    margin-bottom: 28px;
+  }
+
+  .spec-page h2 {
+    font-size: 17px;
+    margin-top: 20px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .spec-page h3 {
+    font-size: 15px;
+    margin-top: 18px;
+  }
+
+  .example-label {
+    font-size: 13px;
+    color: #555;
+    font-style: italic;
+    margin: 14px 0 4px;
+  }
+
+  .spec-footer {
+    margin-top: 36px;
+    padding-top: 14px;
+    border-top: 1px solid #ddd;
+    color: #555;
+    font-size: 13px;
+  }
+
+  .spec-footer a {
+    color: #333;
+  }
+
+  .spec-footer a:hover {
+    color: #000;
+  }
+</style>

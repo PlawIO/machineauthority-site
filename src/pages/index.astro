@@ -1,17 +1,141 @@
 ---
-
+import Base from '../layouts/Base.astro';
 ---
+<Base
+  title="Machine Authority Protocol"
+  description="The open standard for the Action Authorization Boundary. Draft specifications for pre-execution authorization of AI agent tool calls: CAR, Elicitation Loop, and Cryptographic Attestation of Consent."
+  showHero={true}
+>
+  <div class="container">
+    <section class="hero-text">
+      <h1>The open standard for the Action Authorization Boundary.</h1>
+      <p class="tagline">Identity verifies <em>who</em> the agent is. Machine Authority governs <em>what</em> it is allowed to execute.</p>
+      <p class="tagline tagline--sub">No existing standard defines what happens between an agent deciding to act and the action firing. That is the gap this protocol closes.</p>
+    </section>
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+    <hr />
+
+    <section>
+      <h2>Identity is not authority</h2>
+      <p>The current generation of AI security relies on identity protocols and stateless policy engines. OAuth tells you <em>who</em> the agent is. OPA evaluates whether a policy says allow at dispatch. Neither defines a DEFER state. Neither can pause a tool call mid-flight, hold it in state, trigger asynchronous human approval, and resume &mdash; all within a single standardized protocol that produces a verifiable consent artifact.</p>
+      <p>This is not a theoretical gap. The IETF's <a href="https://datatracker.ietf.org/doc/draft-klrc-aiagent-auth/" target="_blank" rel="noopener">draft-klrc-aiagent-auth-00</a> explicitly leaves policy format and action authorization semantics out of scope. <a href="https://techcommunity.microsoft.com/blog/microsoft-security-blog/introducing-entra-agent-id" target="_blank" rel="noopener">Microsoft's analysis of Entra Agent ID</a> documented a 26.67% policy violation rate when relying on identity-only enforcement. The enforcement layer between an agent's reasoning and real-world execution &mdash; the Action Authorization Boundary (AAB) &mdash; has no standard.</p>
+    </section>
+
+    <hr />
+
+    <section>
+      <h2>Where existing standards stop</h2>
+      <p>Ten emerging standards touch AI agent authorization. They cluster into three layers: identity issuance, delegation / token-scope, and policy evaluation. None define DEFER as a first-class protocol primitive. None produce a signed, replay-resistant consent artifact bound to the proposed action.</p>
+      <div class="comparison-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Standard</th>
+              <th>Layer</th>
+              <th>Runtime Action Eval</th>
+              <th>Async DEFER State</th>
+              <th>Signed Consent Artifact</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>OPA</td>
+              <td>Policy evaluation</td>
+              <td><span class="yes">&#10003; synchronous PDP</span></td>
+              <td><span class="no">&#10007; no DEFER state</span></td>
+              <td><span class="no">&#10007;</span></td>
+            </tr>
+            <tr>
+              <td>Agent-Auth-Protocol</td>
+              <td>Delegation / token-scope</td>
+              <td><span class="partial">~ capability-grant at registration</span></td>
+              <td><span class="no">&#10007;</span></td>
+              <td><span class="no">&#10007;</span></td>
+            </tr>
+            <tr>
+              <td>MCP Elicitation</td>
+              <td>Transport (client-controlled)</td>
+              <td><span class="no">&#10007; client-controlled only</span></td>
+              <td><span class="partial">~ not server-enforceable</span></td>
+              <td><span class="no">&#10007;</span></td>
+            </tr>
+            <tr>
+              <td>Google A2A</td>
+              <td>Agent transport</td>
+              <td><span class="no">&#10007; "implementation-specific"</span></td>
+              <td><span class="no">&#10007;</span></td>
+              <td><span class="no">&#10007;</span></td>
+            </tr>
+            <tr>
+              <td>SPIFFE / SPIRE</td>
+              <td>Identity issuance</td>
+              <td><span class="na">N/A</span></td>
+              <td><span class="na">N/A</span></td>
+              <td><span class="na">N/A</span></td>
+            </tr>
+            <tr class="row-self">
+              <td><strong>Machine Authority Protocol</strong></td>
+              <td>Action authorization</td>
+              <td><span class="yes">&#10003;</span></td>
+              <td><span class="yes">&#10003;</span></td>
+              <td><span class="yes">&#10003;</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">OPA evaluates runtime actions correctly as a synchronous PDP. The gap is the <em>DEFER</em> primitive: pausing a tool call, holding it in state, and resuming after a signed out-of-band approval. That is orchestration-layer work today, with no standard governing the wire format.</p>
+    </section>
+
+    <hr />
+
+    <section>
+      <h2>Draft specifications &mdash; v0.1</h2>
+      <p>Three specifications define the Machine Authority Protocol. CAR is the lead artifact. Elicitation Loop and Cryptographic Attestation of Consent are companion stubs published the same day. All three are designed to satisfy <a href="https://aarm.dev" target="_blank" rel="noopener">AARM</a> conformance requirements R1&ndash;R6.</p>
+
+      <div class="spec-list">
+        <a href="/spec/car" class="spec-card">
+          <div class="row">
+            <span class="spec-title">Canonical Action Representation (CAR)</span>
+            <span class="badge badge--draft">Draft v0.1</span>
+            <span class="spec-arrow">&rarr;</span>
+          </div>
+          <p>The serializable schema for a proposed tool call. Tool name, typed arguments, actor identity (SPIFFE SVID, W3C DID, or HTTPS identity URL), delegation chain, session context, timestamp. The common language every policy engine evaluates before execution.</p>
+          <p class="meta">JSON Schema &middot; Decision Envelope &middot; 3 worked examples (ALLOW / DEFER / DENY)</p>
+        </a>
+
+        <a href="/spec/elicitation-loop" class="spec-card">
+          <div class="row">
+            <span class="spec-title">Elicitation Loop</span>
+            <span class="badge badge--stub">Stub</span>
+            <span class="spec-arrow">&rarr;</span>
+          </div>
+          <p>The wire protocol for DEFER state. Four messages: DeferredActionRequest, approver render, signed ApprovalDecision, optional ExecutionReceipt. Transport-agnostic (HTTPS polling, SSE, or WebSockets).</p>
+          <p class="meta">Four-message sequence &middot; Signed decision artifact &middot; Open questions</p>
+        </a>
+
+        <a href="/spec/cryptographic-attestation" class="spec-card">
+          <div class="row">
+            <span class="spec-title">Cryptographic Attestation of Consent (CAC)</span>
+            <span class="badge badge--stub">Stub</span>
+            <span class="spec-arrow">&rarr;</span>
+          </div>
+          <p>The signed receipt. Action hash, approver identity, Ed25519 signature, timestamp, policy version. Verifiable offline by any auditor against the original CAR. Not an access token &mdash; an audit artifact.</p>
+          <p class="meta">Ed25519 &middot; Encoding TBD (JWT/CBOR/JSON) &middot; Reference verifier (planned)</p>
+        </a>
+      </div>
+    </section>
+
+    <hr />
+
+    <section>
+      <h2>Contribute to the standard</h2>
+      <p>Platform engineers, AI researchers, and enterprise architects: read the specifications, file issues, and submit PRs. <a href="/governance">GOVERNANCE.md</a> caps any single organization below a majority of maintainer seats; the spec is MIT-licensed. A conformance test suite is planned for v0.2; implementations seeking conformance status will be listed here.</p>
+      <div class="cta-row">
+        <a href="https://github.com/machineauthority/protocol" target="_blank" rel="noopener" class="cta cta--primary">Read the spec &rarr; GitHub</a>
+        <a href="https://github.com/machineauthority/protocol/discussions" target="_blank" rel="noopener" class="cta">Discussions</a>
+        <a href="/contributing" class="cta">Contributing</a>
+      </div>
+      <p class="note note--xs">The Machine Authority Protocol was initiated by <a href="https://plaw.io" target="_blank" rel="noopener">Plaw,&nbsp;Inc.</a> and is stewarded as a vendor-neutral open standard. <a href="https://veto.so" target="_blank" rel="noopener">Veto</a> &mdash; Plaw's commercial product &mdash; is a reference implementation, not the standard itself. Plaw holds no special governance rights; all normative changes pass through the public maintainer council. See <a href="/governance">Governance</a>.</p>
+    </section>
+  </div>
+</Base>

@@ -1,0 +1,96 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+<Base title="Elicitation Loop v0.1 — Machine Authority Protocol" description="Wire protocol specification for the DEFER state in the Machine Authority Protocol.">
+  <div class="container">
+    <div class="rfc-header">Machine Authority Protocol                        Draft
+Elicitation Loop v0.1
+Status: DRAFT STUB — specification in progress
+Published: 2026-05-02</div>
+
+    <section>
+      <h2>Abstract</h2>
+      <p>The Elicitation Loop is the wire protocol for DEFER state in the Machine Authority Protocol. When the Action Authorization Boundary returns a DEFER Decision Envelope, the enforcement point must suspend the agent's tool call, transmit the pending action to an approver interface, collect a cryptographically signed ApprovalDecision, and resume or permanently deny execution &mdash; all within a standard protocol that any agent framework and any approval UI can implement. This document specifies that four-message sequence.</p>
+    </section>
+
+    <section>
+      <h2>Status</h2>
+      <p>This document is a stub. Section structure and definitions are stable. Protocol details (message formats, polling vs. push delivery, error codes) are in progress. Comments welcome via <a href="https://github.com/machineauthority/protocol/issues" target="_blank" rel="noopener">GitHub Issues</a>.</p>
+    </section>
+
+    <section>
+      <h2>1. Introduction</h2>
+      <p>MCP's Elicitation extension provides a client-controlled pause mechanism but is not server-enforceable and produces no signed artifact. Google A2A's <code>auth-required</code> TaskState signals that credentials are needed but explicitly defers the approval workflow to implementation-specific logic. The Elicitation Loop fills this gap: a transport-agnostic, enforcement-point-driven protocol for suspending an action, routing it to an approver, and collecting a verifiable signed decision before allowing execution to proceed.</p>
+      <p>The Elicitation Loop is transport-agnostic. It can be implemented over HTTPS polling, Server-Sent Events, or WebSockets. The only requirement is that the enforcement point has a <code>resume_token</code> and an <code>approver_endpoint</code> from the DEFER Decision Envelope.</p>
+    </section>
+
+    <section>
+      <h2>2. Terminology</h2>
+      <p>Terms defined in the <a href="/spec/car">Canonical Action Representation (CAR) v0.1</a> specification apply to this document.</p>
+    </section>
+
+    <section>
+      <h2>3. Four-message sequence</h2>
+      <p>The protocol consists of three required messages and one optional confirmation. The enforcement point initiates; the approver endpoint responds.</p>
+
+      <ol>
+        <li>Enforcement point POSTs a <strong>DeferredActionRequest</strong> to the approver endpoint.</li>
+        <li>Approver endpoint returns an <strong>ApprovalDecision</strong> &mdash; either via callback POST or in response to polling.</li>
+        <li>Enforcement point validates the signature on the ApprovalDecision, then executes or permanently denies the action.</li>
+        <li><em>(Optional)</em> Enforcement point sends an <strong>ExecutionReceipt</strong> confirming the outcome.</li>
+      </ol>
+
+      <pre>Enforcement Point              Approver Endpoint
+      |                               |
+      |-- (1) DeferredActionRequest --&gt;|
+      |                               |
+      |      [Human reviews action]   |
+      |                               |
+      |&lt;-- (2) ApprovalDecision ------|
+      |                               |
+      | [Validate signature]          |
+      |                               |
+      |-- (3) ExecutionReceipt ------&gt;|  (OPTIONAL)
+      |                               |
+      [Execute or Deny]</pre>
+
+      <h3>Message 1: DeferredActionRequest</h3>
+      <p><strong>Sent by:</strong> Enforcement point &rarr; Approver endpoint (HTTP POST)</p>
+      <p><strong>Contains:</strong> the full CAR payload, the <code>resume_token</code>, the <code>expires_at</code> timestamp, the <code>approver_hint</code>.</p>
+
+      <h3>Message 2: ApprovalDecision</h3>
+      <p><strong>Sent by:</strong> Approver endpoint &rarr; Enforcement point (HTTP POST to a callback, or the enforcement point polls)</p>
+      <p><strong>Contains:</strong> <code>action_id</code>, <code>decision</code> (APPROVE/DENY), <code>approver_identity</code>, <code>approver_signature</code> (Ed25519 over SHA-256 of canonical CAR JSON), <code>decided_at</code>.</p>
+
+      <h3>Message 3: ExecutionReceipt <span class="note--xs">(OPTIONAL)</span></h3>
+      <p><strong>Sent by:</strong> Enforcement point &rarr; Approver endpoint</p>
+      <p><strong>Contains:</strong> Confirmation that the action was executed or permanently denied.</p>
+    </section>
+
+    <section>
+      <h2>4. ApprovalDecision schema (placeholder)</h2>
+      <pre set:html={`{\n  "action_id": "...",\n  "decision": "APPROVE | DENY",\n  "approver_identity": "...",\n  "approver_signature": "[TBD: Ed25519 signature over SHA-256(canonical CAR JSON)]",\n  "decided_at": "ISO 8601",\n  "reason": "[optional]"\n}`}></pre>
+    </section>
+
+    <section>
+      <h2>5. Open questions</h2>
+      <ul>
+        <li>Push vs. polling delivery of ApprovalDecision</li>
+        <li>Signature binding: what exactly is signed (canonical CAR JSON vs. <code>action_id</code> + <code>policy_version</code>)?</li>
+        <li>Multi-approver flows (quorum approval)</li>
+        <li>Timeout handling and retry semantics</li>
+        <li>Integration with MCP Elicitation extension and Google A2A <code>auth-required</code> TaskState</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>6. References</h2>
+      <ul>
+        <li><a href="/spec/car">CAR v0.1</a> &mdash; machineauthority.org/spec/car</li>
+        <li><a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">MCP Elicitation</a> &mdash; modelcontextprotocol.io/specification/2025-11-25</li>
+        <li><a href="https://a2a-protocol.org" target="_blank" rel="noopener">A2A auth-required TaskState</a> &mdash; a2a-protocol.org</li>
+        <li><a href="https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html" target="_blank" rel="noopener">CIBA (Client-Initiated Backchannel Authentication)</a> &mdash; openid.net</li>
+      </ul>
+    </section>
+  </div>
+</Base>

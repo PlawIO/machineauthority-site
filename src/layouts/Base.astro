@@ -1,0 +1,89 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** If true, shows the centered logo + inline pipe nav hero. Home page only. */
+  showHero?: boolean;
+}
+const {
+  title = 'Machine Authority Protocol',
+  description = 'The open standard for the Action Authorization Boundary. Draft specifications for pre-execution authorization of AI agent tool calls.',
+  showHero = false,
+} = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://machineauthority.org').toString();
+const ogImage = new URL('/og.svg', Astro.site ?? 'https://machineauthority.org').toString();
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content={description} />
+  <meta name="generator" content={Astro.generator} />
+  <meta name="color-scheme" content="light" />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="canonical" href={canonicalURL} />
+
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content={canonicalURL} />
+  <meta property="og:site_name" content="Machine Authority Protocol" />
+  <meta property="og:image" content={ogImage} />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={ogImage} />
+
+  <title>{title}</title>
+
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="alternate icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+</head>
+<body>
+  {showHero ? (
+    <header class="top">
+      <div class="container">
+        <a href="/" class="mark" aria-label="Machine Authority Protocol — Home">
+          <img src="/logo.svg" alt="Machine Authority" width="480" height="165" />
+        </a>
+        <nav class="nav" aria-label="Primary">
+          <a href="/spec/car">CAR</a><span class="sep">|</span>
+          <a href="/spec/elicitation-loop">Elicitation Loop</a><span class="sep">|</span>
+          <a href="/spec/cryptographic-attestation">CAC</a><span class="sep">|</span>
+          <a href="/governance">Governance</a><span class="sep">|</span>
+          <a href="https://github.com/machineauthority/protocol" target="_blank" rel="noopener" class="accent">GitHub</a>
+        </nav>
+      </div>
+    </header>
+  ) : (
+    <div class="container">
+      <div class="back"><a href="/">&larr; Machine Authority Protocol</a></div>
+    </div>
+  )}
+  <main>
+    <slot />
+  </main>
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-about">
+          Machine Authority Protocol is a vendor-neutral open standard.
+          Initiated by <a href="https://plaw.io" target="_blank" rel="noopener">Plaw,&nbsp;Inc.</a>; stewarded by its <a href="/governance">maintainer council</a>.
+          Spec &amp; site are MIT-licensed.
+        </span>
+        <span class="footer-links">
+          <a href="/governance">Governance</a>
+          <a href="/contributing">Contributing</a>
+          <a href="https://github.com/machineauthority/protocol" target="_blank" rel="noopener">GitHub</a>
+        </span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

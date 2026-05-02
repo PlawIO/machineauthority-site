@@ -22,3 +22,16 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# dev scratch / notes (kept local, not published)
+PLAN.md
+REVIEW.md
+artifacts/
+
+# mixed lockfiles — bun.lock is canonical
+pnpm-lock.yaml
+package-lock.json
+
+# deploy residue
+.azure/
+.swa/
