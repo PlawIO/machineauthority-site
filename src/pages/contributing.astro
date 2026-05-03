@@ -36,7 +36,7 @@ import Base from '../layouts/Base.astro';
 
     <section>
       <h2>Legal</h2>
-      <p>All contributors must sign off commits with the <a href="https://developercertificate.org" target="_blank" rel="noopener">Developer Certificate of Origin</a> (DCO): <code>git commit -s</code>.</p>
+      <p>Every commit MUST be signed off with the <a href="https://developercertificate.org" target="_blank" rel="noopener">Developer Certificate of Origin</a> (DCO): <code>git commit -s</code>. PRs lacking sign-off on every commit are blocked at merge &mdash; reviewers verify sign-off manually until the CI check lands (planned for v1.0&nbsp;+&nbsp;30 days, tracked in repo Issues). Until then, reviewers will request a force-push to add <code>Signed-off-by:</code> trailers if missing. No CLA is required; the DCO is sufficient.</p>
       <p>The specification and this website are MIT-licensed. Reference implementations MAY use any OSI-approved license; MIT or Apache&nbsp;2.0 is recommended.</p>
     </section>
   </div>

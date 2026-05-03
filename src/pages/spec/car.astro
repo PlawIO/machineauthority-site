@@ -10,7 +10,7 @@ Published: 2026-05-03</div>
 
     <section>
       <h2>Abstract</h2>
-      <p>The Canonical Action Representation (CAR) is a byte-deterministic, schema-validated, vendor-neutral wire format for the proposed AI-agent tool call <strong>before</strong> it executes. A CAR encodes the tool name, typed arguments, actor identity (with proof-of-possession), delegation chain, accumulated context, session, and timestamp. CAR is the input to the Action Authorization Boundary (AAB); the AAB returns a <a href="/spec/decision-envelope">Decision Envelope</a> carrying one of six AARM-aligned decisions: <code>ALLOW</code>, <code>DENY</code>, <code>DEFER</code>, <code>MODIFY</code>, <code>STEP_UP</code>, <code>REVOKE</code>.</p>
+      <p>The Canonical Action Representation (CAR) is a byte-deterministic, schema-validated, vendor-neutral wire format for the proposed AI-agent tool call <strong>before</strong> it executes. A CAR encodes the tool name, typed arguments, actor identity (with proof-of-possession), delegation chain, accumulated context, session, and timestamp. CAR is the input to the Action Authorization Boundary (AAB); the AAB returns a <a href="/spec/decision-envelope">Decision Envelope</a> carrying one of the five AARM v1 &sect;R4 decisions (<code>ALLOW</code>, <code>DENY</code>, <code>DEFER</code>, <code>MODIFY</code>, <code>STEP_UP</code>) or the MAP-defined <code>REVOKE</code> extension that aborts an in-flight <code>ALLOW</code>.</p>
       <p>CAR is the wire-format binding of <a href="https://aarm.dev" target="_blank" rel="noopener">AARM v1</a> &sect;R1 (pre-execution interception) and &sect;R2 (accumulated context), and provides the action-bound identity surface used by R6 (cryptographic identity binding). The normative artifact for validation is <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/schema/car-v1.json" target="_blank" rel="noopener"><code>schema/car-v1.json</code></a> (JSON Schema Draft 2020-12).</p>
     </section>
 
@@ -186,7 +186,7 @@ Published: 2026-05-03</div>
 
     <section>
       <h2>5. Decision Envelope</h2>
-      <p>The AAB's response to a submitted CAR is a <a href="/spec/decision-envelope">Decision Envelope</a> carrying one of six AARM v1 R4 decisions:</p>
+      <p>The AAB's response to a submitted CAR is a <a href="/spec/decision-envelope">Decision Envelope</a> carrying one of the five AARM v1 &sect;R4 decisions or the MAP-defined <code>REVOKE</code> extension:</p>
       <div class="comparison-table">
         <table>
           <thead>

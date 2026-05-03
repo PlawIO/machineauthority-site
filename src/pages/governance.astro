@@ -16,6 +16,8 @@ import Base from '../layouts/Base.astro';
         <li><strong>MIT-licensed.</strong> The spec is not Plaw's. Normative text, schemas, and test vectors belong to the protocol. If Plaw shuts down tomorrow, the spec keeps shipping.</li>
         <li><strong>No single-org majority.</strong> Maintainer council seats are capped: no single company gets a majority. That includes Plaw. Enforced in <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/GOVERNANCE.md" target="_blank" rel="noopener">GOVERNANCE.md</a>, not by promise.</li>
         <li><strong>Open process.</strong> All normative changes go through public PRs and public discussion. Private channels do not advance spec text.</li>
+        <li><strong>Public votes, supermajority + quorum.</strong> Council decisions require a &frac23; supermajority of voting maintainers with quorum &gt; &frac12; of seated maintainers, conducted in public on GitHub so the tally and individual votes are part of the permanent record.</li>
+        <li><strong>Recusal on conflict.</strong> Any maintainer with a direct material interest in a vote MUST recuse; recusals are recorded in the public tally and count toward neither quorum nor the supermajority.</li>
         <li><strong>Stability rule.</strong> After v1.0, any breaking change ships a 12&ndash;month deprecation window. No exceptions for our own product.</li>
       </ol>
     </section>

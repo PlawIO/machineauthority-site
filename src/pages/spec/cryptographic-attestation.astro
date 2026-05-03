@@ -94,6 +94,7 @@ Published: 2026-05-03</div>
         <li><code>predicate</code>: the CAC body <em>minus</em> <code>envelope</code>, canonicalized identically to the JWS profile.</li>
       </ul>
       <p>The serialized DSSE envelope is base64url-encoded and set as the value of the CAC <code>envelope</code> field, prefixed with the literal string <code>dsse:</code> so verifiers can branch on profile without parsing the bytes twice.</p>
+      <p><strong>Predicate byte-equality (NORMATIVE).</strong> The DSSE <code>predicate</code> bytes after canonicalization MUST equal the JWS-profile body bytes byte-for-byte. A verifier that observes a DSSE CAC whose predicate canonicalizes to anything other than the corresponding CAC body (e.g. <code>decision</code> rewritten between body and predicate) MUST return <code>SCHEMA_VIOLATION</code> &mdash; otherwise an attacker could ship a JWS body with one verdict and a DSSE predicate with another, and downstream tooling that consumes only one profile would observe two contradictory receipts under one envelope.</p>
 
       <h3>4.3 Why two profiles</h3>
       <p>JWS is the cheapest path to verification: every JOSE library on every platform consumes it, and a v1 verifier ships as a single command without external dependencies. DSSE drops into the existing supply-chain ecosystem (Sigstore, Rekor, cosign, in-toto) without adapter code. Picking one would alienate one ecosystem; the cost of supporting both is low because the body bytes are identical. A v1 verifier MUST accept JWS and MAY accept DSSE.</p>

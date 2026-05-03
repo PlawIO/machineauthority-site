@@ -10,7 +10,7 @@ Published: 2026-05-03</div>
 
     <section>
       <h2>Abstract</h2>
-      <p>The Decision Envelope is the response object returned by the Action Authorization Boundary (AAB) when a <a href="/spec/car">Canonical Action Representation (CAR)</a> is submitted for evaluation. It carries one of six <a href="https://aarm.dev" target="_blank" rel="noopener">AARM v1</a> &sect;R4 decisions (<code>ALLOW</code>, <code>DENY</code>, <code>DEFER</code>, <code>MODIFY</code>, <code>STEP_UP</code>, <code>REVOKE</code>), the policy version under which the decision was made, an evaluation timestamp, the optional payload that the decision requires, and an <code>aab_signature</code> that the dispatcher verifies before acting on the envelope.</p>
+      <p>The Decision Envelope is the response object returned by the Action Authorization Boundary (AAB) when a <a href="/spec/car">Canonical Action Representation (CAR)</a> is submitted for evaluation. It carries one of the five <a href="https://aarm.dev" target="_blank" rel="noopener">AARM v1</a> &sect;R4 decisions (<code>ALLOW</code>, <code>DENY</code>, <code>DEFER</code>, <code>MODIFY</code>, <code>STEP_UP</code>) or the MAP-defined <code>REVOKE</code> extension that aborts an in-flight <code>ALLOW</code>, the policy version under which the decision was made, an evaluation timestamp, the optional payload that the decision requires, and an <code>aab_signature</code> that the dispatcher verifies before acting on the envelope.</p>
       <p>The Decision Envelope is the wire-format binding of AARM v1 &sect;R4 (decision states) and the integrity surface used by &sect;R5 (signed receipts) when the envelope is later embedded in a <a href="/spec/cryptographic-attestation">Cryptographic Attestation of Consent (CAC)</a>. The normative artifact for validation is <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/schema/decision-envelope-v1.json" target="_blank" rel="noopener"><code>schema/decision-envelope-v1.json</code></a>.</p>
     </section>
 
@@ -59,6 +59,8 @@ Published: 2026-05-03</div>
         </table>
       </div>
       <p>The schema declares <code>additionalProperties: false</code>. Vendor extensions travel via the <code>extensions</code> map of the originating CAR, not the envelope.</p>
+
+      <p><strong>Payload exclusivity (NORMATIVE).</strong> At most one of <code>defer_payload</code>, <code>modify_payload</code>, <code>step_up_payload</code> MAY be present, and exactly one MUST be present when <code>decision</code> is <code>DEFER</code>, <code>MODIFY</code>, or <code>STEP_UP</code> respectively. <code>ALLOW</code>, <code>DENY</code>, and <code>REVOKE</code> envelopes MUST carry none of the three. Verifiers MUST refuse any envelope that violates this rule with verdict <code>SCHEMA_VIOLATION</code> &mdash; checked <em>before</em> signature verification so a malformed envelope cannot mask its shape under <code>MISSING_SIGNATURE</code>. Without exclusivity an attacker could ship a single signed envelope carrying both a <code>DEFER</code> resume token and a <code>MODIFY</code> rewrite, and downstream services that switched on the wrong field would observe two real-world decisions for one signature.</p>
 
       <h3>3.2 <code>defer_payload</code> (decision = <code>DEFER</code>)</h3>
       <div class="comparison-table">

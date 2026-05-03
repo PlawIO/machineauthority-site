@@ -25,8 +25,11 @@
 
 set -e
 
-REPO="https://github.com/PlawIO/machineauthority-protocol.git"
-BRANCH="main"
+REPO="${MAP_REPO:-https://github.com/PlawIO/machineauthority-protocol.git}"
+# Pin to a tagged release so the demo cannot regress under you. Override with
+# MAP_REF=main if you want to test against tip; in production never resolve a
+# moving ref into a script you piped to sh.
+REF="${MAP_REF:-v1.0.0}"
 
 green() { printf '\033[1;32m%s\033[0m' "$*"; }
 red()   { printf '\033[1;31m%s\033[0m' "$*"; }
@@ -54,10 +57,13 @@ if command -v bun >/dev/null 2>&1; then RUNNER="bun"; fi
 TMPDIR=$(mktemp -d -t map-dispatch-XXXXXX)
 trap 'rm -rf "$TMPDIR"' EXIT INT TERM
 
-say "Fetching MAP v1.0 reference implementation"
-git clone --quiet --depth 1 --branch "$BRANCH" "$REPO" "$TMPDIR/map" >/dev/null
+say "Fetching MAP v1.0 reference implementation (ref: $REF)"
+if ! git clone --quiet --depth 1 --branch "$REF" "$REPO" "$TMPDIR/map" >/dev/null 2>&1; then
+  err "ref '$REF' not found in $REPO; override with MAP_REF=<tag-or-branch>"
+  exit 2
+fi
 cd "$TMPDIR/map"
-dim "    pinned to $(git rev-parse --short HEAD) on $BRANCH"
+dim "    pinned to $(git rev-parse --short HEAD) on $REF"
 echo
 
 say "Step 1/4: verify DEFER envelope signature (Ed25519, MAP-DECISION-ENVELOPE-1)"
