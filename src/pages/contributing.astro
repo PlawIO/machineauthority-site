@@ -13,9 +13,9 @@ import Base from '../layouts/Base.astro';
     <section>
       <h2>Channels</h2>
       <ul>
-        <li><strong>Issues:</strong> <a href="https://github.com/machineauthority/protocol/issues" target="_blank" rel="noopener">github.com/machineauthority/protocol/issues</a> &mdash; bugs, spec ambiguities, proposed changes.</li>
-        <li><strong>Discussions:</strong> <a href="https://github.com/machineauthority/protocol/discussions" target="_blank" rel="noopener">github.com/machineauthority/protocol/discussions</a> &mdash; async design conversations. Lower barrier than PRs.</li>
-        <li><strong>Pull requests:</strong> <a href="https://github.com/machineauthority/protocol/pulls" target="_blank" rel="noopener">github.com/machineauthority/protocol/pulls</a> &mdash; spec text, schemas, examples, tooling.</li>
+        <li><strong>Issues:</strong> <a href="https://github.com/yazcaleb/machineauthority-protocol/issues" target="_blank" rel="noopener">github.com/yazcaleb/machineauthority-protocol/issues</a> &mdash; bugs, spec ambiguities, proposed changes.</li>
+        <li><strong>Discussions:</strong> <a href="https://github.com/yazcaleb/machineauthority-protocol/discussions" target="_blank" rel="noopener">github.com/yazcaleb/machineauthority-protocol/discussions</a> &mdash; async design conversations. Lower barrier than PRs.</li>
+        <li><strong>Pull requests:</strong> <a href="https://github.com/yazcaleb/machineauthority-protocol/pulls" target="_blank" rel="noopener">github.com/yazcaleb/machineauthority-protocol/pulls</a> &mdash; spec text, schemas, examples, tooling.</li>
       </ul>
     </section>
 
@@ -24,11 +24,11 @@ import Base from '../layouts/Base.astro';
     <section>
       <h2>Contribution areas</h2>
       <ol>
-        <li><strong>CAR schema feedback</strong> &mdash; edge cases, field additions, mapping to existing protocols (MCP, A2A, ACP).</li>
-        <li><strong>Elicitation Loop</strong> &mdash; push vs. polling delivery design, retry semantics, multi-approver quorum.</li>
-        <li><strong>CAC format</strong> &mdash; encoding (JWT / CBOR / JSON+detached), approver key distribution, post-quantum migration.</li>
-        <li><strong>Reference implementations</strong> &mdash; any agent framework or policy engine. Existing work integrating with OPA, Cedar, OpenFGA, or MCP servers especially welcome.</li>
-        <li><strong>CONFORMANCE.md</strong> &mdash; mapping to <a href="https://aarm.dev" target="_blank" rel="noopener">AARM</a> R1&ndash;R6 requirements and test vector production.</li>
+        <li><strong>Independent implementations</strong> &mdash; v1.0 has one reference implementation (Node, in <code>reference/</code>). A second independent implementation in any language is the highest-value contribution. Use <code>test-vectors/</code> as the conformance bar.</li>
+        <li><strong>Test vectors</strong> &mdash; new <code>valid/</code> and <code>invalid/</code> cases for canonicalization, CAR, decision envelope, elicitation loop, and CAC. Each invalid vector must declare its expected verdict per the verifier-CLI contract in <code>CONFORMANCE.md</code>.</li>
+        <li><strong>Bindings &amp; integrations</strong> &mdash; OPA / Cedar / OpenFGA policy adapters, MCP server middleware, SPIFFE / DID identity binders, Sigstore (Rekor) profile for <code>MAP-CAC-DSSE-1</code>.</li>
+        <li><strong>Spec ambiguities</strong> &mdash; if two readings of any v1.0 normative MUST are possible, file an issue. Spec text under v1.0 stability is fixed for 12 months; clarifying errata is the path.</li>
+        <li><strong>Post-v1.0 roadmap</strong> &mdash; multi-approver quorum, polling profile for the loop, ML-DSA hybrid signatures, transparency-log profile, revocation discovery. Discussions are open; no normative changes until the next major version.</li>
       </ol>
     </section>
 

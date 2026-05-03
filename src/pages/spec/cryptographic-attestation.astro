@@ -1,30 +1,27 @@
 ---
 import Base from '../../layouts/Base.astro';
 ---
-<Base title="Cryptographic Attestation of Consent (CAC) v0.1 — Machine Authority Protocol" description="Specification for the signed authorization receipt in the Machine Authority Protocol.">
+<Base title="Cryptographic Attestation of Consent (CAC) v1.0 — Machine Authority Protocol" description="v1.0 specification for the signed authorization receipt in the Machine Authority Protocol.">
   <div class="container">
-    <div class="rfc-header">Machine Authority Protocol                        Draft
-Cryptographic Attestation of Consent (CAC) v0.1
-Status: DRAFT STUB
-Published: 2026-05-02</div>
+    <div class="rfc-header">Machine Authority Protocol                       v1.0
+Cryptographic Attestation of Consent (CAC) v1.0
+Status: STABLE
+Published: 2026-05-03</div>
 
     <section>
       <h2>Abstract</h2>
-      <p>The Cryptographic Attestation of Consent is the signed receipt produced when an action is authorized &mdash; either automatically (ALLOW) or after human approval (DEFER &rarr; APPROVE). A CAC binds the action hash, approver identity, decision, timestamp, and policy version into a tamper-evident token verifiable by any auditor offline against the original CAR. This document specifies the CAC format.</p>
-    </section>
-
-    <section>
-      <h2>Status</h2>
-      <p>Stub. Field definitions are stable. Signature algorithm and token encoding details (JWT vs. CBOR vs. JSON-LD) are under discussion.</p>
+      <p>A Cryptographic Attestation of Consent is the signed receipt produced when an action is authorized &mdash; automatically (<code>ALLOW</code>) or after human approval (<code>DEFER &rarr; APPROVE</code>). A CAC binds the action hash, approver identity, decision, declared intent, timestamp, and policy version into a tamper-evident token verifiable by any auditor offline against the original CAR. It is not an access token: a CAC cannot be replayed against a different action.</p>
+      <p>CAC is the wire-format binding of <a href="https://aarm.dev" target="_blank" rel="noopener">AARM v1</a> &sect;R3 (policy + intent evaluation, captured in <code>intent_alignment</code>) and &sect;R5 (signed receipt of the human decision). The normative artifact for validation is <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/schema/cac-v1.json" target="_blank" rel="noopener"><code>schema/cac-v1.json</code></a>.</p>
     </section>
 
     <section>
       <h2>1. Introduction</h2>
-      <p>OAuth session tokens can be stolen, replayed, or hijacked. A CAC is not an access token &mdash; it is an audit receipt. It proves that a specific action (identified by its CAR hash) was authorized under a specific policy version by a specific approver at a specific time. It cannot be reused for a different action. The CIBA (Client-Initiated Backchannel Authentication) pattern is the closest existing analogue, but CIBA covers end-user authentication, not action authorization, and produces an access token rather than a verifiable receipt.</p>
+      <p>OAuth session tokens authenticate a person to a service. SPIFFE SVIDs authenticate a workload to other workloads. Neither describes <em>what specific action a human (or an automated policy) consented to</em>. When audit, regulator review, or post-incident forensics asks &ldquo;did a human approve this?&rdquo;, the only answers available today are SaaS database rows and screenshots &mdash; neither of which is portable, non-repudiable, or verifiable offline.</p>
+      <p>CAC produces a portable, non-repudiable, offline-verifiable artifact: one signed object that any auditor with the original CAR and the approver's public key can verify, end-to-end, with no callbacks to the issuing system. Approvals become evidence rather than configuration.</p>
     </section>
 
     <section>
-      <h2>2. CAC fields</h2>
+      <h2>3. CAC body</h2>
       <div class="comparison-table">
         <table>
           <thead>
@@ -36,91 +33,123 @@ Published: 2026-05-02</div>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td><code>car_hash</code></td>
-              <td>string</td>
-              <td>REQUIRED</td>
-              <td>SHA-256 of the canonical CAR JSON (hex-encoded)</td>
-            </tr>
-            <tr>
-              <td><code>decision</code></td>
-              <td>string</td>
-              <td>REQUIRED</td>
-              <td>ALLOW or APPROVE</td>
-            </tr>
-            <tr>
-              <td><code>approver_identity</code></td>
-              <td>string</td>
-              <td>REQUIRED</td>
-              <td>Identity of the authorizing entity (SPIFFE SVID, DID, or email)</td>
-            </tr>
-            <tr>
-              <td><code>approver_signature</code></td>
-              <td>string</td>
-              <td>REQUIRED</td>
-              <td>Ed25519 signature over <code>car_hash</code> + <code>decision</code> + <code>decided_at</code> + <code>policy_version</code></td>
-            </tr>
-            <tr>
-              <td><code>decided_at</code></td>
-              <td>string (ISO 8601)</td>
-              <td>REQUIRED</td>
-              <td>When the authorization decision was made</td>
-            </tr>
-            <tr>
-              <td><code>policy_version</code></td>
-              <td>string</td>
-              <td>REQUIRED</td>
-              <td>MUST match the <code>policy_version</code> from the Decision Envelope</td>
-            </tr>
-            <tr>
-              <td><code>session_id</code></td>
-              <td>string</td>
-              <td>REQUIRED</td>
-              <td>MUST match the <code>session_id</code> from the CAR</td>
-            </tr>
-            <tr>
-              <td><code>action_id</code></td>
-              <td>string</td>
-              <td>REQUIRED</td>
-              <td>MUST match the <code>action_id</code> from the CAR</td>
-            </tr>
-            <tr>
-              <td><code>encoding</code></td>
-              <td>string</td>
-              <td>REQUIRED</td>
-              <td>"jwt", "cbor", or "json" — TBD</td>
-            </tr>
+            <tr><td><code>version</code></td><td>string</td><td>REQUIRED</td><td><code>"1.0"</code>.</td></tr>
+            <tr><td><code>profile</code></td><td>string</td><td>REQUIRED</td><td><code>MAP-CAC-JWS-1</code> or <code>MAP-CAC-DSSE-1</code>. See &sect;4.</td></tr>
+            <tr><td><code>car_hash</code></td><td>string (hex64)</td><td>REQUIRED</td><td>SHA-256 of the canonical CAR JSON (lowercase hex).</td></tr>
+            <tr><td><code>decision</code></td><td>string</td><td>REQUIRED</td><td><code>ALLOW</code> (AAB issued without human review) or <code>APPROVE</code> (issued by approver after Loop).</td></tr>
+            <tr><td><code>approver_identity</code></td><td>object</td><td>REQUIRED</td><td>Same identity union as CAR's actor (<code>&#123;spiffe_id&#125;</code> &#124; <code>&#123;did&#125;</code> &#124; <code>&#123;url&#125;</code>). For <code>ALLOW</code>, the AAB's identity.</td></tr>
+            <tr><td><code>decided_at</code></td><td>string (RFC 3339)</td><td>REQUIRED</td><td>When the decision was made.</td></tr>
+            <tr><td><code>policy_version</code></td><td>string</td><td>REQUIRED</td><td>MUST equal the <code>policy_version</code> from the Decision Envelope.</td></tr>
+            <tr><td><code>session_id</code></td><td>string</td><td>REQUIRED</td><td>MUST equal the <code>session_id</code> from the CAR.</td></tr>
+            <tr><td><code>action_id</code></td><td>string (UUIDv4)</td><td>REQUIRED</td><td>MUST equal the <code>action_id</code> from the CAR.</td></tr>
+            <tr><td><code>intent_alignment</code></td><td>object</td><td>REQUIRED</td><td>See &sect;3.2 below. Wire-format binding of AARM v1 &sect;R3.</td></tr>
+            <tr><td><code>envelope</code></td><td>string</td><td>REQUIRED</td><td>JWS Compact Serialization (<code>MAP-CAC-JWS-1</code>) or base64url-encoded DSSE envelope prefixed <code>dsse:</code> (<code>MAP-CAC-DSSE-1</code>).</td></tr>
           </tbody>
         </table>
       </div>
+
+      <h3>3.2 <code>intent_alignment</code></h3>
+      <div class="comparison-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Required</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>declared_intent</code></td><td>string</td><td>REQUIRED</td><td>Natural-language intent surfaced to the approver.</td></tr>
+            <tr><td><code>intent_digest</code></td><td>string (hex64)</td><td>REQUIRED</td><td>SHA-256 over the UTF-8 bytes of <code>declared_intent</code>.</td></tr>
+            <tr><td><code>alignment_assertion</code></td><td>string (enum)</td><td>REQUIRED</td><td><code>AGENT_DECLARED</code>, <code>APPROVER_REWORDED</code>, or <code>INFERRED_FROM_PROMPT</code>.</td></tr>
+            <tr><td><code>approver_acknowledged</code></td><td>boolean</td><td>REQUIRED</td><td>Whether the approver clicked through with <code>declared_intent</code> visible. MUST be <code>false</code> for <code>decision = "ALLOW"</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><code>intent_alignment</code> is what makes a CAC a binding of <em>consent</em> rather than just authorization. Without it, two actions with the same <code>car_hash</code> but different framings to the human are indistinguishable in the audit trail. With it, an auditor can verify both the action <em>and</em> the framing under which the human said yes.</p>
     </section>
 
     <section>
-      <h2>3. Verification algorithm</h2>
-      <p>A CAC verifier accepts a CAC and the original CAR and returns true iff all of the following hold:</p>
-      <ol>
-        <li>Compute SHA-256 over the canonical JSON serialization of the CAR (RFC 8785, JCS). Verify it equals <code>car_hash</code>.</li>
-        <li>Verify <code>action_id</code> and <code>session_id</code> in the CAC match the corresponding CAR fields.</li>
-        <li>Resolve <code>approver_identity</code> to a public key (SPIFFE trust bundle, DID document, or configured PKI).</li>
-        <li>Verify the Ed25519 <code>approver_signature</code> over <code>(car_hash || decision || decided_at || policy_version)</code>.</li>
-        <li>Verify <code>decision</code> is <code>ALLOW</code> or <code>APPROVE</code>. Any other value fails verification.</li>
-      </ol>
-    </section>
+      <h2>4. Encoding profiles</h2>
+      <p>A v1 CAC is encoded under one of two profiles. Both profiles produce identical canonical body bytes; only the cryptographic envelope differs.</p>
 
-    <section>
-      <h2>4. Open questions</h2>
+      <h3>4.1 <code>MAP-CAC-JWS-1</code> (REQUIRED for v1 implementations)</h3>
+      <p>JWS Compact Serialization (<a href="https://www.rfc-editor.org/rfc/rfc7515" target="_blank" rel="noopener">RFC 7515</a>) with detached payload (<a href="https://www.rfc-editor.org/rfc/rfc7797" target="_blank" rel="noopener">RFC 7797</a>):</p>
       <ul>
-        <li>Token encoding: JWT (familiar, broad tooling) vs CBOR (compact, IETF-native) vs plain JSON + detached signature</li>
-        <li>Approver key distribution: how does a verifier find the approver's public key?</li>
-        <li>WIMSE WG (chartered March 2024) explicitly flags "how users cryptographically approve agent credentials" as an open question &mdash; CAC is the answer this spec intends to provide</li>
-        <li>Hardware binding: should CAC require HSM-backed keys for high-risk actions?</li>
-        <li>Post-quantum migration: Ed25519 vs. hybrid with ML-DSA</li>
+        <li><code>alg</code>: <code>EdDSA</code> (Ed25519 curve).</li>
+        <li><code>typ</code>: <code>MAP-CAC-JWS-1</code>.</li>
+        <li><code>kid</code>: identifier resolvable to the approver's public key per &sect;5.</li>
+        <li><code>b64</code>: <code>false</code>, <code>crit</code>: <code>["b64"]</code>.</li>
+        <li>Payload: the canonical (RFC 8785 + NFC + empty-key strip) JSON of the CAC body <em>minus</em> the <code>envelope</code> field.</li>
+        <li>Compact form: <code>&lt;base64url-header&gt;..&lt;base64url-signature&gt;</code> with the empty middle segment marking detached payload.</li>
       </ul>
+
+      <h3>4.2 <code>MAP-CAC-DSSE-1</code> (OPTIONAL)</h3>
+      <p><a href="https://github.com/secure-systems-lab/dsse/blob/master/protocol.md" target="_blank" rel="noopener">DSSE</a> envelope around an <a href="https://github.com/in-toto/attestation/blob/main/spec/v1/statement.md" target="_blank" rel="noopener">in-toto Statement v1</a>:</p>
+      <ul>
+        <li>DSSE <code>payloadType</code>: <code>application/vnd.in-toto+json</code>.</li>
+        <li><code>predicateType</code>: <code>https://machineauthority.org/spec/cac/v1</code>.</li>
+        <li><code>subject[0].digest.sha256</code>: the CAC <code>car_hash</code>.</li>
+        <li><code>predicate</code>: the CAC body <em>minus</em> <code>envelope</code>, canonicalized identically to the JWS profile.</li>
+      </ul>
+      <p>The serialized DSSE envelope is base64url-encoded and set as the value of the CAC <code>envelope</code> field, prefixed with the literal string <code>dsse:</code> so verifiers can branch on profile without parsing the bytes twice.</p>
+
+      <h3>4.3 Why two profiles</h3>
+      <p>JWS is the cheapest path to verification: every JOSE library on every platform consumes it, and a v1 verifier ships as a single command without external dependencies. DSSE drops into the existing supply-chain ecosystem (Sigstore, Rekor, cosign, in-toto) without adapter code. Picking one would alienate one ecosystem; the cost of supporting both is low because the body bytes are identical. A v1 verifier MUST accept JWS and MAY accept DSSE.</p>
     </section>
 
     <section>
-      <h2>5. Reference verifier (planned)</h2>
-      <p>A Python reference verifier will be published at <a href="https://github.com/machineauthority/protocol" target="_blank" rel="noopener"><code>github.com/machineauthority/protocol/tools/cac-verify.py</code></a>. A conformance test vector suite (CAR payload + CAC + expected verification result) is planned alongside.</p>
+      <h2>5. Verification</h2>
+      <p>A verifier returns one of: <code>OK</code>, <code>BAD_SIGNATURE</code>, <code>BAD_HASH</code>, <code>EXPIRED_KEY</code>, <code>UNRESOLVABLE_KID</code>, <code>SCHEMA_VIOLATION</code>, <code>INTENT_DIGEST_MISMATCH</code>, <code>UNRESOLVABLE_APPROVER_IDENTITY</code>.</p>
+      <ol>
+        <li>Validate the CAC body against <code>schema/cac-v1.json</code>.</li>
+        <li>Recompute <code>car_hash</code> from the supplied CAR using the canonicalizer (CAR &sect;6).</li>
+        <li>Verify <code>action_id</code> and <code>session_id</code> in the CAC equal the corresponding CAR fields.</li>
+        <li>Recompute <code>intent_digest</code> as SHA-256 of <code>declared_intent</code>.</li>
+        <li>Resolve <code>approver_identity</code> via the key resolution chain (&sect;5.2).</li>
+        <li>Locate the key matching the envelope's <code>kid</code> (or DSSE <code>signatures[].keyid</code>).</li>
+        <li>Verify the envelope per &sect;4.</li>
+        <li>Check key validity windows (&sect;5.3).</li>
+        <li>Otherwise return <code>OK</code>.</li>
+      </ol>
+
+      <h3>5.2 Approver key resolution chain</h3>
+      <ol>
+        <li>Embedded <code>jwk</code> (or DSSE <code>cert</code>) in the envelope (air-gapped only).</li>
+        <li><code>kid</code> &rarr; pinned organization registry / JWKS cache.</li>
+        <li>SPIFFE bundle for the trust domain.</li>
+        <li>DID resolver (verification method matching <code>kid</code>).</li>
+        <li><code>&lt;origin&gt;/.well-known/map-approver-keys.json</code> for URL-typed identities.</li>
+        <li>Configured fallback (offline JWKS file).</li>
+        <li>Otherwise fail <code>UNRESOLVABLE_APPROVER_IDENTITY</code>.</li>
+      </ol>
+
+      <h3>5.3 Validity windows</h3>
+      <p>A CAC issued under a key valid at <code>decided_at</code> remains valid evidence after the key is rotated &mdash; the verifier's clock is not used to invalidate historical CACs. This matches the Sigstore/Fulcio model and lets CACs survive routine key churn.</p>
+    </section>
+
+    <section>
+      <h2>6. Limitations</h2>
+      <p>The following are explicitly out of scope for v1.0 and tracked on the post-v1.0 roadmap. They do not block v1 conformance.</p>
+      <ul>
+        <li>Single signer only. Multi-signer / quorum-policy CACs are roadmap.</li>
+        <li>No transparency log requirement; an optional log profile is on the post-v1.0 roadmap.</li>
+        <li>Revocation is rotation-based via the JWKS <code>revoked</code> hint. Real-time revocation is roadmap.</li>
+        <li>Mandates Ed25519 only. Hybrid ML-DSA paths are roadmap.</li>
+        <li>Silent on HSM requirements; operators MAY require HSM-backed keys for high-risk approver cohorts.</li>
+      </ul>
+      <h3>6.1 Stability commitment</h3>
+      <p>Breaking changes to the v1 CAC wire format require a 12-month deprecation window and a supermajority of the maintainer council before a v2 cutover. Conforming v1 verifiers MUST interoperate with conforming v1 signers without negotiation.</p>
+    </section>
+
+    <section>
+      <h2>7. References</h2>
+      <ul>
+        <li>Source spec: <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/spec/cryptographic-attestation.md" target="_blank" rel="noopener">github.com/yazcaleb/machineauthority-protocol/spec/cryptographic-attestation.md</a></li>
+        <li>Schema: <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/schema/cac-v1.json" target="_blank" rel="noopener"><code>schema/cac-v1.json</code></a></li>
+        <li>Examples: <a href="https://github.com/yazcaleb/machineauthority-protocol/tree/main/examples/cac" target="_blank" rel="noopener"><code>examples/cac/</code></a></li>
+      </ul>
     </section>
   </div>
 </Base>

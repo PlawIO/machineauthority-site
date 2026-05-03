@@ -1,95 +1,173 @@
 ---
 import Base from '../../layouts/Base.astro';
 ---
-<Base title="Elicitation Loop v0.1 — Machine Authority Protocol" description="Wire protocol specification for the DEFER state in the Machine Authority Protocol.">
+<Base title="Elicitation Loop v1.0 — Machine Authority Protocol" description="v1.0 wire-protocol specification for the four-message DEFER handshake in the Machine Authority Protocol.">
   <div class="container">
-    <div class="rfc-header">Machine Authority Protocol                        Draft
-Elicitation Loop v0.1
-Status: DRAFT STUB — specification in progress
-Published: 2026-05-02</div>
+    <div class="rfc-header">Machine Authority Protocol                       v1.0
+Elicitation Loop v1.0
+Status: STABLE
+Published: 2026-05-03</div>
 
     <section>
       <h2>Abstract</h2>
-      <p>The Elicitation Loop is the wire protocol for DEFER state in the Machine Authority Protocol. When the Action Authorization Boundary returns a DEFER Decision Envelope, the enforcement point must suspend the agent's tool call, transmit the pending action to an approver interface, collect a cryptographically signed ApprovalDecision, and resume or permanently deny execution &mdash; all within a standard protocol that any agent framework and any approval UI can implement. This document specifies that four-message sequence.</p>
-    </section>
-
-    <section>
-      <h2>Status</h2>
-      <p>This document is a stub. Section structure and definitions are stable. Protocol details (message formats, polling vs. push delivery, error codes) are in progress. Comments welcome via <a href="https://github.com/machineauthority/protocol/issues" target="_blank" rel="noopener">GitHub Issues</a>.</p>
+      <p>The Elicitation Loop is the wire protocol that activates when the Action Authorization Boundary returns a <a href="/spec/decision-envelope"><code>DEFER</code> Decision Envelope</a>. It is a four-message exchange &mdash; DeferredActionRequest &rarr; ApprovalDecision &rarr; (action executes) &rarr; ExecutionReceipt &mdash; with cryptographic continuity end to end:</p>
+      <ol>
+        <li>The DeferredActionRequest binds the deferred CAR and the AAB's signed envelope to the dispatcher's key via DPoP (<a href="https://www.rfc-editor.org/rfc/rfc9449" target="_blank" rel="noopener">RFC 9449</a>).</li>
+        <li>The ApprovalDecision carries either <code>APPROVE</code> (with an embedded <a href="/spec/cryptographic-attestation">Cryptographic Attestation of Consent</a>) or <code>REJECT</code> (with a reason).</li>
+        <li>The ExecutionReceipt closes the loop with the dispatcher's outcome and a hash reference back to the CAC.</li>
+      </ol>
+      <p>The Elicitation Loop is the wire-format binding of <a href="https://aarm.dev" target="_blank" rel="noopener">AARM v1</a> &sect;R3 (DEFER as a transport-level decision state) and &sect;R5 (signed receipt of the human decision). The normative artifact for validation is <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/schema/elicitation-loop-v1.json" target="_blank" rel="noopener"><code>schema/elicitation-loop-v1.json</code></a>.</p>
     </section>
 
     <section>
       <h2>1. Introduction</h2>
-      <p>MCP's Elicitation extension provides a client-controlled pause mechanism but is not server-enforceable and produces no signed artifact. Google A2A's <code>auth-required</code> TaskState signals that credentials are needed but explicitly defers the approval workflow to implementation-specific logic. The Elicitation Loop fills this gap: a transport-agnostic, enforcement-point-driven protocol for suspending an action, routing it to an approver, and collecting a verifiable signed decision before allowing execution to proceed.</p>
-      <p>The Elicitation Loop is transport-agnostic. It can be implemented over HTTPS polling, Server-Sent Events, or WebSockets. The only requirement is that the enforcement point has a <code>resume_token</code> and an <code>approver_endpoint</code> from the DEFER Decision Envelope.</p>
+      <p><a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">MCP 2025-11-25 Elicitation</a> provides a transport primitive that lets a server pause a model loop and ask the user for input, but the protocol terminates inside the model session: the user's response is plain text, unsigned, and unbound to a specific tool call. <a href="https://a2a-protocol.org" target="_blank" rel="noopener">Google A2A</a>'s <code>auth-required</code> TaskState signals that re-authentication is needed but delegates the workflow to implementation-specific hosts. <a href="https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html" target="_blank" rel="noopener">CIBA</a> is the closest existing pattern, but CIBA authenticates a person &mdash; not an action &mdash; and produces an OAuth access token rather than a verifiable receipt of consent.</p>
+      <p>The Elicitation Loop occupies the gap. It is transport-flexible (push or poll) but format-rigid (DAR/AD/ER schemas, DPoP-bound resume, JWS-signed ApprovalDecision, embedded CAC). It composes with MCP and A2A: an MCP server MAY surface the DAR through Elicitation; an A2A worker MAY surface it through <code>auth-required</code>. In both cases the resulting ApprovalDecision travels back through the Elicitation Loop, not the host transport.</p>
     </section>
 
     <section>
-      <h2>2. Terminology</h2>
-      <p>Terms defined in the <a href="/spec/car">Canonical Action Representation (CAR) v0.1</a> specification apply to this document.</p>
+      <h2>2. Conventions</h2>
+      <p>The key words <strong>MUST</strong>, <strong>MUST NOT</strong>, <strong>REQUIRED</strong>, <strong>SHALL</strong>, <strong>SHALL NOT</strong>, <strong>SHOULD</strong>, <strong>SHOULD NOT</strong>, <strong>RECOMMENDED</strong>, <strong>NOT RECOMMENDED</strong>, <strong>MAY</strong>, and <strong>OPTIONAL</strong> in this document are to be interpreted as described in <a href="https://www.rfc-editor.org/rfc/rfc2119" target="_blank" rel="noopener">RFC 2119</a>.</p>
+      <p>Canonicalization rules are inherited from <a href="/spec/car">CAR &sect;6</a>.</p>
     </section>
 
     <section>
-      <h2>3. Four-message sequence</h2>
-      <p>The protocol consists of three required messages and one optional confirmation. The enforcement point initiates; the approver endpoint responds.</p>
+      <h2>3. Sequence</h2>
+<pre>Dispatcher                       Approver Endpoint
+   |                                    |
+   |-- (1) DeferredActionRequest -----&gt; |
+   |       (POST + DPoP proof)          |
+   |                                    |
+   |       [Human reviews CAR + envelope, then approves or rejects]
+   |                                    |
+   |&lt;-- (2) ApprovalDecision ---------- |   push profile (default)
+   |                                    |
+   |                                    |   - or -
+   |                                    |
+   |-- GET resume --DPoP---------------&gt;|   poll profile (OPTIONAL in v1.0)
+   |&lt;-- ApprovalDecision ---------------|
+   |                                    |
+   |   [Verify JWS + embedded CAC]      |
+   |                                    |
+   |   [Execute or permanently DENY]    |
+   |                                    |
+   |-- (3) ExecutionReceipt ----------&gt; |</pre>
 
+      <h3>3.1 Push profile (REQUIRED in v1.0)</h3>
+      <p>The dispatcher POSTs the DeferredActionRequest to <code>defer_payload.approver_endpoint</code>. The approver returns 202 Accepted and later POSTs the ApprovalDecision back to a dispatcher-supplied <code>callback_url</code>. The callback URL MUST be HTTPS. The approver MUST sign the ApprovalDecision JWS with the approver-identity key and MUST include the embedded CAC when <code>decision = "APPROVE"</code>.</p>
+
+      <h3>3.2 Poll profile (OPTIONAL in v1.0)</h3>
+      <p>The dispatcher polls the approver with <code>GET &lt;approver_endpoint&gt;/&lt;request_id&gt;</code>, carrying a DPoP proof on every request. The approver responds 204 No Content while pending and 200 OK with the ApprovalDecision when available. v1.0 implementations MAY ship the poll profile, but v1.0 conformance only requires the push profile.</p>
+
+      <h3>3.3 Why the resume is DPoP-bound</h3>
+      <p><code>defer_payload.resume_token</code> was a bearer token in early drafts. Bearer resume tokens are a known anti-pattern: an attacker who exfiltrates the token (network capture, log scraping, browser-side leakage) can resume the loop <em>as the legitimate dispatcher</em> and receive the human's approval bound to a request the human never saw. v1.0 binds the resume to the dispatcher key via <a href="https://www.rfc-editor.org/rfc/rfc9449" target="_blank" rel="noopener">RFC 9449</a> DPoP:</p>
+      <ul>
+        <li>The AAB issued the DEFER envelope with <code>defer_payload.dispatcher_jkt</code> set to the dispatcher's <a href="https://www.rfc-editor.org/rfc/rfc7638" target="_blank" rel="noopener">RFC 7638</a> base64url JWK SHA-256 thumbprint.</li>
+        <li>Every dispatcher &rarr; approver request in the loop MUST carry a <code>DPoP</code> HTTP header containing a JWS signed by the dispatcher key whose thumbprint matches <code>dispatcher_jkt</code>.</li>
+        <li>The DPoP proof MUST cover <code>htm</code> (HTTP method), <code>htu</code> (HTTP target URI), <code>iat</code> (issuance time), and <code>ath</code> (<a href="https://www.rfc-editor.org/rfc/rfc9449#section-4.3" target="_blank" rel="noopener">RFC 9449 &sect;4.3</a> base64url SHA-256 of the <code>resume_token</code>).</li>
+        <li>The approver MUST verify that:
+          <ol>
+            <li>The DPoP <code>jwk</code> header thumbprint equals <code>dispatcher_jkt</code>.</li>
+            <li>The <code>htm</code> and <code>htu</code> claims match the inbound request.</li>
+            <li>The <code>iat</code> is within the approver's clock-skew tolerance (RECOMMENDED &plusmn;60 seconds).</li>
+            <li>The <code>ath</code> claim equals the SHA-256 of <code>resume_token</code>.</li>
+          </ol>
+        </li>
+        <li>Approvers MUST reject a Loop request that omits or fails the DPoP proof. A failed DPoP proof MUST cause the approver to invalidate the pending request and notify the AAB so the original DEFER becomes a permanent DENY.</li>
+      </ul>
+      <p>Replay-protection windows: a previously-seen DPoP <code>jti</code> MUST NOT be honored a second time within <code>defer_payload.expires_at</code>.</p>
+    </section>
+
+    <section>
+      <h2>4. Schemas</h2>
+      <p>The schemas below are normative and live in <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/schema/elicitation-loop-v1.json" target="_blank" rel="noopener"><code>schema/elicitation-loop-v1.json</code></a>.</p>
+
+      <h3>4.1 DeferredActionRequest (DAR)</h3>
+<pre>DeferredActionRequest:
+  loop_version: "1.0"
+  request_id: UUIDv4                     // distinct from CAR action_id
+  car: &lt;CAR&gt;                              // the deferred Canonical Action Representation
+  defer_envelope: &lt;Decision Envelope&gt;     // MUST be the DEFER envelope from the AAB
+  callback_url?: https URL                // required for push profile
+  created_at: RFC 3339
+  expires_at: RFC 3339                    // MUST equal defer_envelope.defer_payload.expires_at</pre>
+      <p>The dispatcher MUST submit <code>car</code> and <code>defer_envelope</code> byte-for-byte as issued. The approver MUST recompute <code>car_hash</code> from <code>car</code> (using the canonicalizer in <a href="/spec/car">CAR &sect;6</a>) before presenting the action to the human.</p>
+
+      <h3>4.2 ApprovalDecision</h3>
+<pre>ApprovalDecision:
+  loop_version: "1.0"
+  request_id: UUIDv4                     // echoes DAR.request_id
+  decision: "APPROVE" | "REJECT"
+  approver: &#123; identity: &lt;Identity&gt;, signed_at: RFC 3339 &#125;
+  reason?: string                         // required when decision = "REJECT"
+  cac?: &lt;CAC&gt;                             // REQUIRED iff decision = "APPROVE"
+  approver_signature: &lt;JWS Compact&gt;       // JWS-EdDSA over the canonical body minus this field
+  dpop_proof_jkt: &lt;base64url-43&gt;          // MUST equal defer_envelope.defer_payload.dispatcher_jkt</pre>
+      <p>The <code>approver_signature</code> JWS uses <code>alg = EdDSA</code>, <code>typ = MAP-APPROVAL-DECISION-1</code>, <code>b64 = false</code> (RFC 7797 detached payload), and a <code>kid</code> resolvable to the approver-identity public key per <a href="/spec/cryptographic-attestation">CAC &sect;5 verification</a>. Push and poll profiles produce identical signed bodies; only the HTTP framing differs.</p>
+      <p><code>dpop_proof_jkt</code> is the <a href="https://www.rfc-editor.org/rfc/rfc7638" target="_blank" rel="noopener">RFC 7638</a> base64url SHA-256 JWK thumbprint of the dispatcher key that presented the <code>resume_token</code>. It MUST equal <code>defer_envelope.defer_payload.dispatcher_jkt</code>; the approver's signature covers this field so the approver attests to the binding.</p>
+      <p>The human approver loop produces <em>only</em> APPROVE or REJECT. The AAB-only decisions (MODIFY, STEP_UP, REVOKE) are out of scope for the human: those are returned by the AAB on the original CAR submission, not by the approver in the Loop.</p>
+
+      <h3>4.3 ExecutionReceipt</h3>
+<pre>ExecutionReceipt:
+  loop_version: "1.0"
+  request_id: UUIDv4
+  action_id: UUIDv4                       // echoes CAR.action_id
+  outcome: "EXECUTED" | "FAILED" | "ABORTED"
+  cac_ref: &#123; car_hash, approver_kid &#125;     // back-reference, not the full CAC
+  executed_at: RFC 3339
+  result_digest?: hex                     // SHA-256 of result payload, optional
+  error?: &#123; code, detail? &#125;               // required for FAILED</pre>
+      <p>The ExecutionReceipt is informational; it is the dispatcher's attestation that it acted on (or aborted) the approval. The Loop is considered complete when either an ExecutionReceipt arrives or <code>expires_at</code> elapses. Approvers MAY ignore the ExecutionReceipt for auditing-only deployments, but conformant approvers MUST surface EXECUTED / FAILED / ABORTED to the human who approved the action.</p>
+    </section>
+
+    <section>
+      <h2>5. Composition with the CAC</h2>
+      <p>When <code>ApprovalDecision.decision = "APPROVE"</code>, the approver MUST embed a fully-formed CAC in <code>cac</code>. The dispatcher persists this CAC alongside its execution log; downstream systems (audit warehouses, transparency logs, regulator exports) consume the CAC, not the ApprovalDecision. This is deliberate: the ApprovalDecision is a Loop-internal artifact; the CAC is the portable, vendor-neutral receipt.</p>
+      <p>The approver MUST NOT issue a CAC outside an ApprovalDecision. CACs that appear without a containing ApprovalDecision MUST be treated as provenance-less and rejected.</p>
+    </section>
+
+    <section>
+      <h2>6. Limitations</h2>
+      <p>The following are explicitly out of scope for v1.0 and tracked on the post-v1.0 roadmap. They do not block v1 conformance.</p>
       <ol>
-        <li>Enforcement point POSTs a <strong>DeferredActionRequest</strong> to the approver endpoint.</li>
-        <li>Approver endpoint returns an <strong>ApprovalDecision</strong> &mdash; either via callback POST or in response to polling.</li>
-        <li>Enforcement point validates the signature on the ApprovalDecision, then executes or permanently denies the action.</li>
-        <li><em>(Optional)</em> Enforcement point sends an <strong>ExecutionReceipt</strong> confirming the outcome.</li>
+        <li><strong>Single approver only.</strong> v1.0 Loop produces exactly one ApprovalDecision per DAR. Multi-approver / quorum approval is roadmap.</li>
+        <li><strong>Push only at conformance level.</strong> The poll profile (&sect;3.2) is defined but not required by v1.0 conformance. Push remains REQUIRED for v1.0 implementations.</li>
+        <li><strong>No approver chaining.</strong> An approver MUST NOT forward a DAR to another approver in the same Loop instance. Forwarding is a roadmap feature gated on the multi-approver work.</li>
+        <li><strong>Time bounds.</strong> <code>expires_at</code> MUST be the smaller of the AAB-issued DEFER expiry and the approver's configured maximum. Default approver maximum SHOULD be 15 minutes.</li>
+        <li><strong>Replay protection scope.</strong> Replay protection is per-<code>request_id</code> and per-DPoP <code>jti</code>. A dispatcher that reuses <code>request_id</code> across actions has already broken the spec; approvers MUST NOT attempt to &ldquo;fix&rdquo; this by deduplicating on <code>action_id</code>.</li>
+        <li><strong>No transparency log.</strong> v1.0 Loop does not specify or require a transparency log for ApprovalDecisions. Operators who require one SHOULD log the embedded CAC into a Sigstore-style log; the Loop itself is silent on the choice.</li>
       </ol>
 
-      <pre>Enforcement Point              Approver Endpoint
-      |                               |
-      |-- (1) DeferredActionRequest --&gt;|
-      |                               |
-      |      [Human reviews action]   |
-      |                               |
-      |&lt;-- (2) ApprovalDecision ------|
-      |                               |
-      | [Validate signature]          |
-      |                               |
-      |-- (3) ExecutionReceipt ------&gt;|  (OPTIONAL)
-      |                               |
-      [Execute or Deny]</pre>
-
-      <h3>Message 1: DeferredActionRequest</h3>
-      <p><strong>Sent by:</strong> Enforcement point &rarr; Approver endpoint (HTTP POST)</p>
-      <p><strong>Contains:</strong> the full CAR payload, the <code>resume_token</code>, the <code>expires_at</code> timestamp, the <code>approver_hint</code>.</p>
-
-      <h3>Message 2: ApprovalDecision</h3>
-      <p><strong>Sent by:</strong> Approver endpoint &rarr; Enforcement point (HTTP POST to a callback, or the enforcement point polls)</p>
-      <p><strong>Contains:</strong> <code>action_id</code>, <code>decision</code> (APPROVE/DENY), <code>approver_identity</code>, <code>approver_signature</code> (Ed25519 over SHA-256 of canonical CAR JSON), <code>decided_at</code>.</p>
-
-      <h3>Message 3: ExecutionReceipt <span class="note--xs">(OPTIONAL)</span></h3>
-      <p><strong>Sent by:</strong> Enforcement point &rarr; Approver endpoint</p>
-      <p><strong>Contains:</strong> Confirmation that the action was executed or permanently denied.</p>
+      <h3>6.1 Stability commitment</h3>
+      <p>Breaking changes to the v1 wire format require a 12-month deprecation window and ratification by the founding council before a v2 cutover. Conforming v1 implementations exchanging Loop messages with another v1 implementation MUST interoperate without negotiation.</p>
     </section>
 
     <section>
-      <h2>4. ApprovalDecision schema (placeholder)</h2>
-      <pre set:html={`{\n  "action_id": "...",\n  "decision": "APPROVE | DENY",\n  "approver_identity": "...",\n  "approver_signature": "[TBD: Ed25519 signature over SHA-256(canonical CAR JSON)]",\n  "decided_at": "ISO 8601",\n  "reason": "[optional]"\n}`}></pre>
+      <h2>7. Security considerations</h2>
+      <ol>
+        <li><strong>Endpoint substitution.</strong> The DAR's <code>defer_envelope.defer_payload.approver_endpoint</code> is signed by the AAB. The dispatcher MUST POST the DAR to that endpoint and refuse redirects to a different origin.</li>
+        <li><strong>Approver-key compromise.</strong> Detection is via the approver-key resolution chain (<a href="/spec/cryptographic-attestation">CAC &sect;5.2</a>) plus key rotation. v1.0 does not solve key revocation in real time; keys outside their validity window MUST fail verification.</li>
+        <li><strong>Human social engineering.</strong> The human approver sees the CAR; nothing in the Loop prevents a human from approving an action they should have rejected. The Loop's job is to make the human's decision non-repudiable, not to substitute for the human's judgement.</li>
+        <li><strong>Dispatcher-key compromise.</strong> A compromised dispatcher key lets the attacker complete the DPoP proof. Dispatchers SHOULD use hardware-backed keys where threat models demand it, and SHOULD rotate dispatcher keys on a schedule shorter than the maximum DEFER expiry they ever expect to issue.</li>
+      </ol>
     </section>
 
     <section>
-      <h2>5. Open questions</h2>
+      <h2>8. References</h2>
       <ul>
-        <li>Push vs. polling delivery of ApprovalDecision</li>
-        <li>Signature binding: what exactly is signed (canonical CAR JSON vs. <code>action_id</code> + <code>policy_version</code>)?</li>
-        <li>Multi-approver flows (quorum approval)</li>
-        <li>Timeout handling and retry semantics</li>
-        <li>Integration with MCP Elicitation extension and Google A2A <code>auth-required</code> TaskState</li>
+        <li>Source spec: <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/spec/elicitation-loop.md" target="_blank" rel="noopener">github.com/yazcaleb/machineauthority-protocol/spec/elicitation-loop.md</a></li>
+        <li>Schema: <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/schema/elicitation-loop-v1.json" target="_blank" rel="noopener"><code>schema/elicitation-loop-v1.json</code></a></li>
+        <li>Examples: <a href="https://github.com/yazcaleb/machineauthority-protocol/tree/main/examples/elicitation-loop" target="_blank" rel="noopener"><code>examples/elicitation-loop/</code></a></li>
       </ul>
-    </section>
-
-    <section>
-      <h2>6. References</h2>
+      <h3>Normative references</h3>
       <ul>
-        <li><a href="/spec/car">CAR v0.1</a> &mdash; machineauthority.org/spec/car</li>
-        <li><a href="https://modelcontextprotocol.io/specification/2025-11-25" target="_blank" rel="noopener">MCP Elicitation</a> &mdash; modelcontextprotocol.io/specification/2025-11-25</li>
-        <li><a href="https://a2a-protocol.org" target="_blank" rel="noopener">A2A auth-required TaskState</a> &mdash; a2a-protocol.org</li>
-        <li><a href="https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html" target="_blank" rel="noopener">CIBA (Client-Initiated Backchannel Authentication)</a> &mdash; openid.net</li>
+        <li><a href="https://www.rfc-editor.org/rfc/rfc2119" target="_blank" rel="noopener">RFC 2119</a> &mdash; RFC 2119 keywords.</li>
+        <li><a href="https://www.rfc-editor.org/rfc/rfc3339" target="_blank" rel="noopener">RFC 3339</a> &mdash; Date and time on the Internet.</li>
+        <li><a href="https://www.rfc-editor.org/rfc/rfc7515" target="_blank" rel="noopener">RFC 7515</a> &mdash; JSON Web Signature.</li>
+        <li><a href="https://www.rfc-editor.org/rfc/rfc7638" target="_blank" rel="noopener">RFC 7638</a> &mdash; JWK Thumbprint.</li>
+        <li><a href="https://www.rfc-editor.org/rfc/rfc7797" target="_blank" rel="noopener">RFC 7797</a> &mdash; JWS Unencoded Payload Option.</li>
+        <li><a href="https://www.rfc-editor.org/rfc/rfc8785" target="_blank" rel="noopener">RFC 8785</a> &mdash; JSON Canonicalization Scheme.</li>
+        <li><a href="https://www.rfc-editor.org/rfc/rfc9449" target="_blank" rel="noopener">RFC 9449</a> &mdash; OAuth 2.0 DPoP.</li>
       </ul>
     </section>
   </div>

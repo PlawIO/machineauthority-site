@@ -1,0 +1,227 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+<Base title="Decision Envelope v1.0 — Machine Authority Protocol" description="v1.0 specification for the signed policy verdict in the Machine Authority Protocol.">
+  <div class="container">
+    <div class="rfc-header">Machine Authority Protocol                       v1.0
+Decision Envelope v1.0
+Status: STABLE
+Published: 2026-05-03</div>
+
+    <section>
+      <h2>Abstract</h2>
+      <p>The Decision Envelope is the response object returned by the Action Authorization Boundary (AAB) when a <a href="/spec/car">Canonical Action Representation (CAR)</a> is submitted for evaluation. It carries one of six <a href="https://aarm.dev" target="_blank" rel="noopener">AARM v1</a> &sect;R4 decisions (<code>ALLOW</code>, <code>DENY</code>, <code>DEFER</code>, <code>MODIFY</code>, <code>STEP_UP</code>, <code>REVOKE</code>), the policy version under which the decision was made, an evaluation timestamp, the optional payload that the decision requires, and an <code>aab_signature</code> that the dispatcher verifies before acting on the envelope.</p>
+      <p>The Decision Envelope is the wire-format binding of AARM v1 &sect;R4 (decision states) and the integrity surface used by &sect;R5 (signed receipts) when the envelope is later embedded in a <a href="/spec/cryptographic-attestation">Cryptographic Attestation of Consent (CAC)</a>. The normative artifact for validation is <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/schema/decision-envelope-v1.json" target="_blank" rel="noopener"><code>schema/decision-envelope-v1.json</code></a>.</p>
+    </section>
+
+    <section>
+      <h2>1. Introduction</h2>
+      <p>When an AAB returns a decision over an unauthenticated transport, an attacker can flip <code>DENY &rarr; ALLOW</code>, downgrade <code>STEP_UP &rarr; ALLOW</code>, or rewrite the <code>defer_payload.approver_endpoint</code> to point at an attacker-controlled host that issues a forged ApprovalDecision. Today's AARM-aligned proofs of concept either ignore this attack surface or wave at &ldquo;transport security&rdquo; (TLS termination at the load balancer is not transport security for an envelope that crosses a service boundary).</p>
+      <p>The Decision Envelope closes the gap by binding every decision to the AAB's identity key with a JWS-EdDSA signature over the RFC 8785-canonicalized envelope bytes. At v1, every envelope MUST carry both <code>aab_kid</code> and <code>aab_signature</code>. Verifiers MUST refuse to act on a decision that fails signature verification.</p>
+    </section>
+
+    <section>
+      <h2>2. Conventions</h2>
+      <p>The key words <strong>MUST</strong>, <strong>MUST NOT</strong>, <strong>REQUIRED</strong>, <strong>SHALL</strong>, <strong>SHALL NOT</strong>, <strong>SHOULD</strong>, <strong>SHOULD NOT</strong>, <strong>RECOMMENDED</strong>, <strong>NOT RECOMMENDED</strong>, <strong>MAY</strong>, and <strong>OPTIONAL</strong> in this document are to be interpreted as described in <a href="https://www.rfc-editor.org/rfc/rfc2119" target="_blank" rel="noopener">RFC 2119</a>.</p>
+      <p>JSON terms are as defined in <a href="https://www.rfc-editor.org/rfc/rfc8259" target="_blank" rel="noopener">RFC 8259</a>. Canonicalization rules are inherited from <a href="/spec/car">CAR &sect;6</a>: RFC 8785 (JCS) with NFC normalization of every string and rejection of empty-string keys.</p>
+    </section>
+
+    <section>
+      <h2>3. Schema</h2>
+
+      <h3>3.1 Top-level fields</h3>
+      <div class="comparison-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Required</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>envelope_version</code></td><td>string</td><td>REQUIRED</td><td>MUST be <code>"1.0"</code>.</td></tr>
+            <tr><td><code>decision</code></td><td>string (enum)</td><td>REQUIRED</td><td>One of <code>ALLOW</code>, <code>DENY</code>, <code>DEFER</code>, <code>MODIFY</code>, <code>STEP_UP</code>, <code>REVOKE</code>.</td></tr>
+            <tr><td><code>action_id</code></td><td>string (UUIDv4)</td><td>REQUIRED</td><td>MUST equal the <code>action_id</code> of the CAR being decided.</td></tr>
+            <tr><td><code>decided_at</code></td><td>string (RFC 3339)</td><td>REQUIRED</td><td>UTC timestamp at which the AAB returned the decision.</td></tr>
+            <tr><td><code>policy_version</code></td><td>string</td><td>REQUIRED</td><td>Opaque AAB-issued version under which the decision was rendered.</td></tr>
+            <tr><td><code>policy_decision_id</code></td><td>string (UUIDv4)</td><td>RECOMMENDED</td><td>Globally unique decision identifier; used to correlate logs across services.</td></tr>
+            <tr><td><code>expires_at</code></td><td>string (RFC 3339)</td><td>CONDITIONAL</td><td>REQUIRED for <code>ALLOW</code>. The dispatcher MUST NOT execute the action after this timestamp.</td></tr>
+            <tr><td><code>reason_code</code></td><td>string</td><td>CONDITIONAL</td><td>REQUIRED for <code>DENY</code> and <code>REVOKE</code>. Machine-readable code (e.g. <code>policy.rate_limit_exceeded</code>).</td></tr>
+            <tr><td><code>reason_detail</code></td><td>string</td><td>OPTIONAL</td><td>Human-readable elaboration of <code>reason_code</code>. Never normative.</td></tr>
+            <tr><td><code>defer_payload</code></td><td>object</td><td>CONDITIONAL</td><td>REQUIRED for <code>DEFER</code>. See &sect;3.2.</td></tr>
+            <tr><td><code>modify_payload</code></td><td>object</td><td>CONDITIONAL</td><td>REQUIRED for <code>MODIFY</code>. See &sect;3.3.</td></tr>
+            <tr><td><code>step_up_payload</code></td><td>object</td><td>CONDITIONAL</td><td>REQUIRED for <code>STEP_UP</code>. See &sect;3.4.</td></tr>
+            <tr><td><code>aab_kid</code></td><td>string</td><td>REQUIRED</td><td>The <code>kid</code> of the AAB key that signed this envelope. MUST equal the <code>kid</code> in the <code>aab_signature</code> JWS header.</td></tr>
+            <tr><td><code>aab_signature</code></td><td>string</td><td>REQUIRED</td><td>JWS Compact Serialization over the canonical envelope (minus this field). See &sect;4.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The schema declares <code>additionalProperties: false</code>. Vendor extensions travel via the <code>extensions</code> map of the originating CAR, not the envelope.</p>
+
+      <h3>3.2 <code>defer_payload</code> (decision = <code>DEFER</code>)</h3>
+      <div class="comparison-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Required</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>resume_token</code></td><td>string</td><td>REQUIRED</td><td>Bound to the dispatcher key per <a href="/spec/elicitation-loop">Elicitation Loop &sect;4</a>.</td></tr>
+            <tr><td><code>approver_endpoint</code></td><td>string (https URI)</td><td>REQUIRED</td><td>HTTPS endpoint where the dispatcher submits the DeferredActionRequest.</td></tr>
+            <tr><td><code>expires_at</code></td><td>string (RFC 3339)</td><td>REQUIRED</td><td>If no ApprovalDecision arrives by this timestamp, the dispatcher MUST treat the deferral as <code>DENY</code>.</td></tr>
+            <tr><td><code>dispatcher_jkt</code></td><td>string (base64url)</td><td>REQUIRED</td><td>JWK SHA-256 thumbprint (RFC 7638) of the dispatcher key authorized to resume. The approver MUST verify the inbound DPoP proof against this thumbprint.</td></tr>
+            <tr><td><code>approver_audience</code></td><td>object</td><td>RECOMMENDED</td><td>Hint identifying the approver audience. One of <code>&#123;spiffe_id&#125;</code>, <code>&#123;did&#125;</code>, <code>&#123;url&#125;</code>. Not authoritative.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>3.3 <code>modify_payload</code> (decision = <code>MODIFY</code>)</h3>
+      <div class="comparison-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Required</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>modified_arguments</code></td><td>object</td><td>REQUIRED</td><td>Replacement value for <code>arguments</code> on the new CAR. MUST validate against the same schema the original arguments validated against.</td></tr>
+            <tr><td><code>child_action_id</code></td><td>string (UUIDv4)</td><td>REQUIRED</td><td>The <code>action_id</code> the dispatcher MUST assign to the rewritten CAR.</td></tr>
+            <tr><td><code>parent_action_id</code></td><td>string (UUIDv4)</td><td>REQUIRED</td><td>MUST equal the envelope's <code>action_id</code>; preserved for audit linkage.</td></tr>
+            <tr><td><code>modification_reason</code></td><td>string</td><td>OPTIONAL</td><td>Human-readable explanation.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><code>MODIFY</code> is AAB-internal: a human approver loop never returns <code>MODIFY</code>. The dispatcher MUST mint a fresh CAR carrying <code>child_action_id</code>, <code>modified_arguments</code>, and a <code>parent_action_id</code> field equal to the parent's <code>action_id</code>, then resubmit that CAR to the AAB. The new CAR gets its own envelope and (if approved) its own CAC. Receipt traceability runs along the parent &rarr; child chain.</p>
+
+      <h3>3.4 <code>step_up_payload</code> (decision = <code>STEP_UP</code>)</h3>
+      <div class="comparison-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Required</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>required_acr</code></td><td>string</td><td>REQUIRED</td><td>RFC 9470 <code>acr_values</code> syntax &mdash; the Authentication Context Class Reference the actor MUST satisfy before the action proceeds.</td></tr>
+            <tr><td><code>required_amr</code></td><td>array of string</td><td>OPTIONAL</td><td>RFC 8176 Authentication Method Reference values.</td></tr>
+            <tr><td><code>step_up_endpoint</code></td><td>string (https URI)</td><td>REQUIRED</td><td>Endpoint where the actor performs the step-up authentication.</td></tr>
+            <tr><td><code>expires_at</code></td><td>string (RFC 3339)</td><td>REQUIRED</td><td>If the step-up is not completed by this timestamp, treat as <code>DENY</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>After step-up succeeds, the dispatcher resubmits the original CAR with an updated <code>actor</code> block reflecting the elevated authentication; the AAB returns a new envelope with a new <code>policy_decision_id</code>. Like <code>MODIFY</code>, <code>STEP_UP</code> is AAB-internal.</p>
+
+      <h3>3.5 Reason-code namespacing</h3>
+      <p><code>reason_code</code> values are dotted lowercase identifiers in three reserved prefixes:</p>
+      <ul>
+        <li><code>policy.*</code> &mdash; the request was rejected by policy evaluation.</li>
+        <li><code>identity.*</code> &mdash; actor identity, PoP, or delegation chain failed validation.</li>
+        <li><code>aab.*</code> &mdash; the AAB itself rejected the request (malformed envelope, expired CAR, version mismatch).</li>
+      </ul>
+      <p>Vendor-specific codes MUST use a reverse-DNS prefix (e.g. <code>com.veto.policy.high_risk_data</code>). The reserved prefixes above are normative and MUST NOT be used for vendor extensions.</p>
+    </section>
+
+    <section>
+      <h2>4. Envelope signature (<code>aab_signature</code>)</h2>
+
+      <h3>4.1 Algorithm</h3>
+      <p><code>aab_signature</code> is a JWS Compact Serialization (<a href="https://www.rfc-editor.org/rfc/rfc7515" target="_blank" rel="noopener">RFC 7515</a>) value computed as follows:</p>
+      <ol>
+        <li><strong>Build the unsigned envelope.</strong> Serialize every required and conditional field of the envelope <em>except</em> <code>aab_signature</code> itself.</li>
+        <li><strong>Canonicalize.</strong> Run the result through the CAR canonicalizer (<a href="/spec/car">CAR &sect;6.2</a>): RFC 8785 with NFC normalization of every string and rejection of empty-string keys. The output is the <em>canonical envelope bytes</em>.</li>
+        <li><strong>Sign.</strong> Produce a JWS Compact Serialization over the canonical envelope bytes using:
+          <ul>
+            <li><code>alg</code>: <code>EdDSA</code> (Ed25519 curve).</li>
+            <li><code>kid</code>: identifier resolvable to a public key under the AAB's identity (see <a href="/spec/car">CAR &sect;4</a> for identity formats).</li>
+            <li><code>typ</code>: <code>MAP-DECISION-ENVELOPE-1</code>.</li>
+            <li><code>b64</code>: <code>false</code> and the corresponding <code>crit: ["b64"]</code> per <a href="https://www.rfc-editor.org/rfc/rfc7797" target="_blank" rel="noopener">RFC 7797</a>. The payload is the canonical envelope bytes; only the JOSE header and signature are base64url-encoded.</li>
+          </ul>
+        </li>
+        <li><strong>Embed.</strong> Set <code>aab_signature</code> to the resulting JWS Compact Serialization (<code>&lt;header&gt;..&lt;signature&gt;</code> with the empty middle segment).</li>
+      </ol>
+
+      <h3>4.2 Verification</h3>
+      <p>A dispatcher verifying an inbound envelope MUST:</p>
+      <ol>
+        <li>Reject envelopes whose <code>decision</code> is not in the &sect;3.1 enum.</li>
+        <li>Reject envelopes that lack required conditional payloads (<code>defer_payload</code> for <code>DEFER</code>, etc.).</li>
+        <li>Reject envelopes that omit <code>aab_kid</code> or <code>aab_signature</code> with <code>aab.unsigned_envelope</code>.</li>
+        <li>Recompute the canonical envelope bytes by removing <code>aab_signature</code> from the parsed object and applying the canonicalizer. <code>aab_kid</code> is part of the signed body and MUST remain when canonicalizing.</li>
+        <li>Resolve <code>kid</code> to a JWK using the AAB's published identity bundle (SPIFFE trust bundle, DID document, or <code>&lt;aab_url&gt;/.well-known/map-aab-keys.json</code> for URL-typed identities).</li>
+        <li>Verify the JWS over the canonical envelope bytes.</li>
+        <li>Reject the envelope if any step fails. The dispatcher MUST NOT execute, defer, modify, or step up on an envelope that fails verification.</li>
+      </ol>
+
+      <h3>4.3 Why a JWS over the canonical envelope (not just <code>car_hash</code>)</h3>
+      <p>A signature solely over <code>car_hash</code> would prove the AAB knew about the CAR but would not prevent rewriting <code>decision</code>, <code>expires_at</code>, <code>approver_endpoint</code>, <code>required_acr</code>, or <code>reason_code</code>. Each of those fields is a security boundary. The MAP envelope signature MUST cover the complete envelope state because any field is policy-bearing.</p>
+
+      <h3>4.4 Stability commitment</h3>
+      <p>The Decision Envelope wire format is locked at v1.0. A breaking change (field rename, added required field, removed optional field, semantic shift) MUST be published as a separate <code>v2</code>-versioned schema with at least a 12-month deprecation window during which v1 verifiers continue to operate. The MAP council ratifies any such bump.</p>
+    </section>
+
+    <section>
+      <h2>5. State machine</h2>
+<pre>                +-------+        +--------+
+   submit  ----&gt;| AAB   |-------&gt;| ALLOW  | --&gt; dispatcher executes
+                |       |        +--------+
+                |       |
+                |       |        +--------+
+                |       |-------&gt;| DENY   | --&gt; dispatcher refuses
+                |       |        +--------+
+                |       |
+                |       |        +--------+
+                |       |-------&gt;| DEFER  | --&gt; dispatcher enters Elicitation Loop
+                |       |        +--------+
+                |       |
+                |       |        +--------+
+                |       |-------&gt;| MODIFY | --&gt; dispatcher mints child CAR, resubmits
+                |       |        +--------+
+                |       |
+                |       |        +--------+
+                |       |-------&gt;|STEP_UP | --&gt; actor re-authenticates, resubmits CAR
+                |       |        +--------+
+                |       |
+                |       |        +--------+
+                |       |-------&gt;| REVOKE | --&gt; dispatcher aborts an in-flight session
+                +-------+        +--------+</pre>
+      <p><code>REVOKE</code> is the only decision the AAB MAY send asynchronously: it applies to a previously-issued <code>ALLOW</code> within its <code>expires_at</code> window and tells the dispatcher to halt or roll back any work derived from that <code>ALLOW</code>. A <code>REVOKE</code> envelope MUST carry the original <code>action_id</code> and SHOULD carry a <code>reason_code</code> of <code>policy.revoked.*</code>.</p>
+    </section>
+
+    <section>
+      <h2>6. Examples</h2>
+      <p>See <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/examples/decision-allow.json" target="_blank" rel="noopener"><code>examples/decision-allow.json</code></a>, <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/examples/decision-defer.json" target="_blank" rel="noopener"><code>examples/decision-defer.json</code></a>, <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/examples/decision-modify.json" target="_blank" rel="noopener"><code>examples/decision-modify.json</code></a>, and <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/examples/decision-step-up.json" target="_blank" rel="noopener"><code>examples/decision-step-up.json</code></a>.</p>
+    </section>
+
+    <section>
+      <h2>7. Security considerations</h2>
+      <ol>
+        <li><strong>Replay across actions.</strong> <code>aab_signature</code> covers <code>action_id</code> and <code>decided_at</code>, so a captured envelope cannot be replayed against a different CAR. Within the same action the <code>expires_at</code> window bounds reuse.</li>
+        <li><strong>Replay across deployments.</strong> Implementations SHOULD include a deployment-scoped value in <code>policy_version</code> so an envelope signed by a staging AAB cannot be replayed at a production dispatcher with the same trust bundle.</li>
+        <li><strong>Compromise of the AAB key.</strong> Rotation is via the standard identity-bundle mechanism; revoked keys MUST NOT verify. A transparency-log profile is on the post-v1.0 roadmap.</li>
+        <li><strong>Approver-endpoint substitution.</strong> <code>defer_payload.approver_endpoint</code> is signed; an attacker cannot redirect the Elicitation Loop without forging the AAB key.</li>
+        <li><strong><code>MODIFY</code> argument poisoning.</strong> The replacement <code>modified_arguments</code> is policy-evaluated when the dispatcher resubmits the child CAR. Implementations MUST NOT short-circuit re-evaluation; the parent's <code>policy_decision_id</code> is for audit, not authorization.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>8. References</h2>
+      <ul>
+        <li>Source spec: <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/spec/decision-envelope.md" target="_blank" rel="noopener">github.com/yazcaleb/machineauthority-protocol/spec/decision-envelope.md</a></li>
+        <li>Schema: <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/schema/decision-envelope-v1.json" target="_blank" rel="noopener"><code>schema/decision-envelope-v1.json</code></a></li>
+        <li>Examples: <a href="https://github.com/yazcaleb/machineauthority-protocol/tree/main/examples" target="_blank" rel="noopener"><code>examples/</code></a></li>
+      </ul>
+    </section>
+  </div>
+</Base>

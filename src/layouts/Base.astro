@@ -9,7 +9,7 @@ interface Props {
 }
 const {
   title = 'Machine Authority Protocol',
-  description = 'The open standard for the Action Authorization Boundary. Draft specifications for pre-execution authorization of AI agent tool calls.',
+  description = 'The open standard for the Action Authorization Boundary. v1.0 specifications for pre-execution authorization of AI agent tool calls: CAR, Decision Envelope, Elicitation Loop, CAC.',
   showHero = false,
 } = Astro.props;
 
@@ -59,10 +59,11 @@ const ogImage = new URL('/og.svg', Astro.site ?? 'https://machineauthority.org')
         </a>
         <nav class="nav" aria-label="Primary">
           <a href="/spec/car">CAR</a><span class="sep">|</span>
+          <a href="/spec/decision-envelope">Decision Envelope</a><span class="sep">|</span>
           <a href="/spec/elicitation-loop">Elicitation Loop</a><span class="sep">|</span>
           <a href="/spec/cryptographic-attestation">CAC</a><span class="sep">|</span>
           <a href="/governance">Governance</a><span class="sep">|</span>
-          <a href="https://github.com/machineauthority/protocol" target="_blank" rel="noopener" class="accent">GitHub</a>
+          <a href="https://github.com/yazcaleb/machineauthority-protocol" target="_blank" rel="noopener" class="accent">GitHub</a>
         </nav>
       </div>
     </header>
@@ -85,7 +86,7 @@ const ogImage = new URL('/og.svg', Astro.site ?? 'https://machineauthority.org')
         <span class="footer-links">
           <a href="/governance">Governance</a>
           <a href="/contributing">Contributing</a>
-          <a href="https://github.com/machineauthority/protocol" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://github.com/yazcaleb/machineauthority-protocol" target="_blank" rel="noopener">GitHub</a>
         </span>
       </div>
     </div>

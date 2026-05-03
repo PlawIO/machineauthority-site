@@ -27,6 +27,7 @@ pnpm-debug.log*
 PLAN.md
 REVIEW.md
 artifacts/
+research/
 
 # mixed lockfiles — bun.lock is canonical
 pnpm-lock.yaml

@@ -9,12 +9,12 @@
 html {
   background: #fff;
   color: #111;
-  font-size: 16px;
+  font-size: 18px;
 }
 
 body {
-  font-family: ui-monospace, "Lucida Console", Menlo, Consolas, "Courier New", monospace;
-  font-size: 16px;
+  font-family: "Lucida Console", ui-monospace, Menlo, Consolas, "Courier New", monospace;
+  font-size: 18px;
   line-height: 1.5;
   background: #fff;
   color: #111;
@@ -304,8 +304,9 @@ th {
 .badge::before { content: "["; font-style: normal; }
 .badge::after  { content: "]"; font-style: normal; }
 
-.badge--draft { color: #9a6200; }
-.badge--stub  { color: #666; }
+.badge--draft  { color: #9a6200; }
+.badge--stub   { color: #666;    }
+.badge--stable { color: #0a7a2f; }
 
 /* CTA row: plain underlined links, not buttons */
 .cta-row {
@@ -432,7 +433,7 @@ dd {
 
 /* Small screens */
 @media (max-width: 640px) {
-  html, body { font-size: 15px; }
+  html, body { font-size: 16px; }
   .container { padding: 0 20px; }
   .top { padding: 48px 0 20px; }
   .top .mark img { max-width: 340px; }

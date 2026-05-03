@@ -1,13 +1,14 @@
 # machineauthority.org
 
-Source for the [Machine Authority Protocol](https://machineauthority.org) website — the open standard for the Action Authorization Boundary (AAB).
+Source for the [Machine Authority Protocol](https://machineauthority.org) website. MAP defines the wire format for the Action Authorization Boundary — the missing checkpoint between an AI agent's decision to act and the action firing. Four v1.0 specifications: CAR (the canonical action), Decision Envelope (the AAB's signed verdict), Elicitation Loop (the four-message defer protocol), CAC (the signed receipt).
 
-The specification itself lives in [`machineauthority/protocol`](https://github.com/machineauthority/protocol). This repository is only the web presence: three draft specification pages, governance, and contributing notes. No marketing content, no product pages.
+The specification itself lives in [`yazcaleb/machineauthority-protocol`](https://github.com/yazcaleb/machineauthority-protocol) (moving to `machineauthority/protocol` once founding co-maintainers are confirmed). This repository is only the web presence: four specification pages, governance, and contributing notes. No marketing content, no product pages.
 
 ## What this site is
 
-- A neutral home for the three draft v0.1 specifications: **Canonical Action Representation (CAR)**, **Elicitation Loop**, and **Cryptographic Attestation of Consent (CAC)**.
+- A neutral home for the four v1.0 specifications: **Canonical Action Representation (CAR)**, **Decision Envelope**, **Elicitation Loop**, and **Cryptographic Attestation of Consent (CAC)**.
 - A comparison of where existing standards (OPA, Agent-Auth-Protocol, MCP Elicitation, Google A2A, SPIFFE) stop and where the AAB begins.
+- A copy-pasteable end-to-end verifier demo at [`/examples/v1/dispatch.sh`](./public/examples/v1/dispatch.sh).
 - A link into the governance process and an invitation to contribute.
 
 ## What this site is not
@@ -41,15 +42,17 @@ bun run preview  # preview the built site
 src/
   layouts/Base.astro           Layout with centered logo + pipe nav hero, OG/canonical tags
   pages/
-    index.astro                Home: gap framing, comparison table, three spec cards
+    index.astro                Home: gap framing, comparison table, four spec cards
     governance.astro
     contributing.astro
     spec/
-      car.astro                CAR v0.1 full draft (RFC-style)
-      elicitation-loop.astro   Elicitation Loop v0.1 (stub)
-      cryptographic-attestation.astro   CAC v0.1 (stub)
+      car.astro                          CAR v1.0 (RFC-style)
+      decision-envelope.astro            Decision Envelope v1.0
+      elicitation-loop.astro             Elicitation Loop v1.0
+      cryptographic-attestation.astro    CAC v1.0
   styles/global.css            All styling lives here
 public/
+  examples/v1/dispatch.sh      End-to-end verifier demo (curl | sh)
   logo.svg                     Pixel-art MACHINE/AUTHORITY wordmark
   favicon.svg                  Letter mark for browser tab
   og.svg                       Open Graph share card (1200x630)
@@ -64,7 +67,7 @@ public/
 
 ## Affiliation
 
-Machine Authority Protocol was initiated by [Plaw, Inc.](https://plaw.io) during development of [Veto](https://veto.so) (our commercial action-authorization platform) and is stewarded as a vendor-neutral open standard under the [`machineauthority`](https://github.com/machineauthority) GitHub organization. Plaw holds no special governance rights; see [`/governance`](https://machineauthority.org/governance).
+Machine Authority Protocol was initiated by [Plaw, Inc.](https://plaw.io) in the course of building [Veto](https://veto.so), our commercial action-authorization platform — Veto needed a wire format that didn't exist. From v1.0 onward the spec is governed by a multi-org maintainer council; Plaw holds at most a plurality of seats, never a majority. Same pattern as SPIFFE (seeded by Scytale), Sigstore (Red Hat/Google/Purdue), OpenTelemetry (Google/LightStep/Microsoft/Uber). MIT-licensed; if Plaw shuts down, the spec keeps shipping. See [`/governance`](https://machineauthority.org/governance).
 
 ## License
 
