@@ -25,7 +25,7 @@ import Base from '../layouts/Base.astro';
 
     <section>
       <h2>Standards landscape</h2>
-      <p>We surveyed every active draft, RFC, and shipping protocol that touches agent authorization (12 most relevant shown; <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/docs/standards-landscape.md" target="_blank" rel="noopener">full 27-standard matrix on GitHub</a>). The pattern: identity layers don't speak action, policy engines don't speak DEFER, OAuth extensions stop at grant time, and the one abstract spec that does name the requirements (AARM v1) leaves the wire format undefined. That undefined wire format is what MAP specifies.</p>
+      <p>We surveyed every active draft, RFC, and shipping protocol that touches agent authorization (12 most relevant shown; <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/docs/standards-landscape.md" target="_blank" rel="noopener">full 27-standard matrix on GitHub</a>). The pattern: identity layers don't speak action, policy engines don't speak DEFER, OAuth extensions stop at grant time, and the one abstract spec that does name the requirements (AARM v1) leaves the wire format undefined. That undefined wire format is what MAP specifies.</p>
       <div class="comparison-table">
         <table>
           <thead>
@@ -175,7 +175,7 @@ import Base from '../layouts/Base.astro';
           <p class="meta"><code>MAP-CAC-JWS-1</code> required &middot; <code>MAP-CAC-DSSE-1</code> optional &middot; AARM R3, R5 &middot; Schema <code>schema/cac-v1.json</code></p>
         </a>
       </div>
-      <p class="note">All four specifications are the wire-format binding for <a href="https://aarm.dev" target="_blank" rel="noopener">AARM v1</a> conformance requirements R1&ndash;R6 (Cloud Security Alliance, 2025). The traceability matrix in <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/CONFORMANCE.md" target="_blank" rel="noopener">CONFORMANCE.md</a> maps every R1&ndash;R6 row to the exact spec section, schema field, and test vector that satisfies it.</p>
+      <p class="note">All four specifications are the wire-format binding for <a href="https://aarm.dev" target="_blank" rel="noopener">AARM v1</a> conformance requirements R1&ndash;R6 (Cloud Security Alliance, 2025). The traceability matrix in <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/CONFORMANCE.md" target="_blank" rel="noopener">CONFORMANCE.md</a> maps every R1&ndash;R6 row to the exact spec section, schema field, and test vector that satisfies it.</p>
     </section>
 
     <hr />
@@ -191,10 +191,10 @@ import Base from '../layouts/Base.astro';
 
     <section>
       <h2>Contribute</h2>
-      <p>Read the specs. Find a hole. File the issue. We respond on every one. <a href="/governance">GOVERNANCE.md</a> caps any single organization &mdash; including Plaw &mdash; below a majority of maintainer seats. The spec is MIT-licensed. The v1.0 conformance vector suite is locked under <a href="https://github.com/yazcaleb/machineauthority-protocol/tree/main/test-vectors" target="_blank" rel="noopener"><code>/test-vectors/</code></a>; <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/reference/cli/run-conformance.js" target="_blank" rel="noopener"><code>bun run reference/cli/run-conformance.js</code></a> walks every vector and exits 0 on conformance. Implementations passing all required vectors for a tier MAY self-certify per <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/CONFORMANCE.md" target="_blank" rel="noopener">CONFORMANCE.md</a> (OpenID Connect Conformance model).</p>
+      <p>Read the specs. Find a hole. File the issue. We respond on every one. <a href="/governance">GOVERNANCE.md</a> caps any single organization &mdash; including Plaw &mdash; below a majority of maintainer seats. The spec is MIT-licensed. The v1.0 conformance vector suite is locked under <a href="https://github.com/PlawIO/machineauthority-protocol/tree/main/test-vectors" target="_blank" rel="noopener"><code>/test-vectors/</code></a>; <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/reference/cli/run-conformance.js" target="_blank" rel="noopener"><code>bun run reference/cli/run-conformance.js</code></a> walks every vector and exits 0 on conformance. Implementations passing all required vectors for a tier MAY self-certify per <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/CONFORMANCE.md" target="_blank" rel="noopener">CONFORMANCE.md</a> (OpenID Connect Conformance model).</p>
       <div class="cta-row">
-        <a href="https://github.com/yazcaleb/machineauthority-protocol" target="_blank" rel="noopener" class="cta cta--primary">Read the spec &rarr; GitHub</a>
-        <a href="https://github.com/yazcaleb/machineauthority-protocol/discussions" target="_blank" rel="noopener" class="cta">Discussions</a>
+        <a href="https://github.com/PlawIO/machineauthority-protocol" target="_blank" rel="noopener" class="cta cta--primary">Read the spec &rarr; GitHub</a>
+        <a href="https://github.com/PlawIO/machineauthority-protocol/discussions" target="_blank" rel="noopener" class="cta">Discussions</a>
         <a href="/contributing" class="cta">Contributing</a>
       </div>
       <p class="note note--xs">Machine Authority Protocol was initiated by <a href="https://plaw.io" target="_blank" rel="noopener">Plaw,&nbsp;Inc.</a> in the course of building <a href="https://veto.so" target="_blank" rel="noopener">Veto</a>, a commercial action-authorization platform. Veto is a reference implementation, not the standard. Plaw holds no special governance rights; all normative changes pass through the public maintainer council. If Plaw shuts down tomorrow, the spec keeps shipping. See <a href="/governance">Governance</a>.</p>

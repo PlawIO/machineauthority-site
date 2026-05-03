@@ -2,7 +2,7 @@
 
 Source for the [Machine Authority Protocol](https://machineauthority.org) website. MAP defines the wire format for the Action Authorization Boundary — the missing checkpoint between an AI agent's decision to act and the action firing. Four v1.0 specifications: CAR (the canonical action), Decision Envelope (the AAB's signed verdict), Elicitation Loop (the four-message defer protocol), CAC (the signed receipt).
 
-The specification itself lives in [`yazcaleb/machineauthority-protocol`](https://github.com/yazcaleb/machineauthority-protocol) (moving to `machineauthority/protocol` once founding co-maintainers are confirmed). This repository is only the web presence: four specification pages, governance, and contributing notes. No marketing content, no product pages.
+The specification itself lives in [`PlawIO/machineauthority-protocol`](https://github.com/PlawIO/machineauthority-protocol). The repository sits in the [Plaw, Inc.](https://plaw.io) GitHub organization while founding co-maintainers are confirmed; it migrates to a neutral `machineauthority/` organization once a multi-org maintainer council is seated, per [`GOVERNANCE.md`](https://github.com/PlawIO/machineauthority-protocol/blob/main/GOVERNANCE.md). Both this site and the spec are MIT-licensed. This repository is only the web presence: four specification pages, governance, and contributing notes. No marketing content, no product pages.
 
 ## What this site is
 

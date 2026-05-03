@@ -11,7 +11,7 @@ Published: 2026-05-03</div>
     <section>
       <h2>Abstract</h2>
       <p>A Cryptographic Attestation of Consent is the signed receipt produced when an action is authorized &mdash; automatically (<code>ALLOW</code>) or after human approval (<code>DEFER &rarr; APPROVE</code>). A CAC binds the action hash, approver identity, decision, declared intent, timestamp, and policy version into a tamper-evident token verifiable by any auditor offline against the original CAR. It is not an access token: a CAC cannot be replayed against a different action.</p>
-      <p>CAC is the wire-format binding of <a href="https://aarm.dev" target="_blank" rel="noopener">AARM v1</a> &sect;R3 (policy + intent evaluation, captured in <code>intent_alignment</code>) and &sect;R5 (signed receipt of the human decision). The normative artifact for validation is <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/schema/cac-v1.json" target="_blank" rel="noopener"><code>schema/cac-v1.json</code></a>.</p>
+      <p>CAC is the wire-format binding of <a href="https://aarm.dev" target="_blank" rel="noopener">AARM v1</a> &sect;R3 (policy + intent evaluation, captured in <code>intent_alignment</code>) and &sect;R5 (signed receipt of the human decision). The normative artifact for validation is <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/schema/cac-v1.json" target="_blank" rel="noopener"><code>schema/cac-v1.json</code></a>.</p>
     </section>
 
     <section>
@@ -146,9 +146,9 @@ Published: 2026-05-03</div>
     <section>
       <h2>7. References</h2>
       <ul>
-        <li>Source spec: <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/spec/cryptographic-attestation.md" target="_blank" rel="noopener">github.com/yazcaleb/machineauthority-protocol/spec/cryptographic-attestation.md</a></li>
-        <li>Schema: <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/schema/cac-v1.json" target="_blank" rel="noopener"><code>schema/cac-v1.json</code></a></li>
-        <li>Examples: <a href="https://github.com/yazcaleb/machineauthority-protocol/tree/main/examples/cac" target="_blank" rel="noopener"><code>examples/cac/</code></a></li>
+        <li>Source spec: <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/spec/cryptographic-attestation.md" target="_blank" rel="noopener">github.com/PlawIO/machineauthority-protocol/spec/cryptographic-attestation.md</a></li>
+        <li>Schema: <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/schema/cac-v1.json" target="_blank" rel="noopener"><code>schema/cac-v1.json</code></a></li>
+        <li>Examples: <a href="https://github.com/PlawIO/machineauthority-protocol/tree/main/examples/cac" target="_blank" rel="noopener"><code>examples/cac/</code></a></li>
       </ul>
     </section>
   </div>

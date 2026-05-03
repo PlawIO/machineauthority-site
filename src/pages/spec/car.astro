@@ -11,7 +11,7 @@ Published: 2026-05-03</div>
     <section>
       <h2>Abstract</h2>
       <p>The Canonical Action Representation (CAR) is a byte-deterministic, schema-validated, vendor-neutral wire format for the proposed AI-agent tool call <strong>before</strong> it executes. A CAR encodes the tool name, typed arguments, actor identity (with proof-of-possession), delegation chain, accumulated context, session, and timestamp. CAR is the input to the Action Authorization Boundary (AAB); the AAB returns a <a href="/spec/decision-envelope">Decision Envelope</a> carrying one of six AARM-aligned decisions: <code>ALLOW</code>, <code>DENY</code>, <code>DEFER</code>, <code>MODIFY</code>, <code>STEP_UP</code>, <code>REVOKE</code>.</p>
-      <p>CAR is the wire-format binding of <a href="https://aarm.dev" target="_blank" rel="noopener">AARM v1</a> &sect;R1 (pre-execution interception) and &sect;R2 (accumulated context), and provides the action-bound identity surface used by R6 (cryptographic identity binding). The normative artifact for validation is <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/schema/car-v1.json" target="_blank" rel="noopener"><code>schema/car-v1.json</code></a> (JSON Schema Draft 2020-12).</p>
+      <p>CAR is the wire-format binding of <a href="https://aarm.dev" target="_blank" rel="noopener">AARM v1</a> &sect;R1 (pre-execution interception) and &sect;R2 (accumulated context), and provides the action-bound identity surface used by R6 (cryptographic identity binding). The normative artifact for validation is <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/schema/car-v1.json" target="_blank" rel="noopener"><code>schema/car-v1.json</code></a> (JSON Schema Draft 2020-12).</p>
     </section>
 
     <section>
@@ -32,7 +32,7 @@ Published: 2026-05-03</div>
 
     <section>
       <h2>3. Schema</h2>
-      <p>The normative schema is <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/schema/car-v1.json" target="_blank" rel="noopener"><code>schema/car-v1.json</code></a>. This document is editorial; the schema is authoritative. Worked examples live in <a href="https://github.com/yazcaleb/machineauthority-protocol/tree/main/examples" target="_blank" rel="noopener"><code>examples/</code></a>.</p>
+      <p>The normative schema is <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/schema/car-v1.json" target="_blank" rel="noopener"><code>schema/car-v1.json</code></a>. This document is editorial; the schema is authoritative. Worked examples live in <a href="https://github.com/PlawIO/machineauthority-protocol/tree/main/examples" target="_blank" rel="noopener"><code>examples/</code></a>.</p>
 
       <h3>3.1 Top-level fields</h3>
       <div class="comparison-table">
@@ -181,7 +181,7 @@ Published: 2026-05-03</div>
         <li>Reject if no key in <code>keys</code> matches the <code>keyid</code> used for PoP.</li>
         <li>Cache the document subject to standard HTTP caching rules; respect <code>Cache-Control</code> and <code>Expires</code>.</li>
       </ol>
-      <p>A worked example lives at <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/examples/agent-identity-document.json" target="_blank" rel="noopener"><code>examples/agent-identity-document.json</code></a>.</p>
+      <p>A worked example lives at <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/examples/agent-identity-document.json" target="_blank" rel="noopener"><code>examples/agent-identity-document.json</code></a>.</p>
     </section>
 
     <section>
@@ -202,7 +202,7 @@ Published: 2026-05-03</div>
           </tbody>
         </table>
       </div>
-      <p>Full schema and verifier algorithm: <a href="/spec/decision-envelope">spec/decision-envelope</a> and <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/schema/decision-envelope-v1.json" target="_blank" rel="noopener"><code>schema/decision-envelope-v1.json</code></a>.</p>
+      <p>Full schema and verifier algorithm: <a href="/spec/decision-envelope">spec/decision-envelope</a> and <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/schema/decision-envelope-v1.json" target="_blank" rel="noopener"><code>schema/decision-envelope-v1.json</code></a>.</p>
     </section>
 
     <section>
@@ -214,7 +214,7 @@ Published: 2026-05-03</div>
       <h3>6.2 Algorithm</h3>
       <p>The canonical form of a CAR is computed as follows:</p>
       <ol>
-        <li>Validate the CAR against <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/schema/car-v1.json" target="_blank" rel="noopener"><code>schema/car-v1.json</code></a>. Reject on validation failure.</li>
+        <li>Validate the CAR against <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/schema/car-v1.json" target="_blank" rel="noopener"><code>schema/car-v1.json</code></a>. Reject on validation failure.</li>
         <li><strong>NFC normalization:</strong> Every JSON string value (keys and values) MUST be Unicode-normalized to NFC (<a href="https://unicode.org/reports/tr15/" target="_blank" rel="noopener">Unicode Standard Annex #15</a>) before serialization.</li>
         <li><strong>Empty-key strip:</strong> Any object key equal to the empty string <code>""</code> MUST be rejected (causes the canonicalization to fail). RFC 8785 permits empty keys; MAP forbids them to eliminate a known ambiguity surface.</li>
         <li><strong>JCS:</strong> Apply <a href="https://www.rfc-editor.org/rfc/rfc8785" target="_blank" rel="noopener">RFC 8785 JSON Canonicalization Scheme</a>. This pins:
@@ -236,7 +236,7 @@ Published: 2026-05-03</div>
       <p>A 64-character lowercase hex string. <code>car_hash</code> is what every downstream artifact (Decision Envelope <code>aab_signature</code>, CAC <code>car_hash</code>, audit log entries) refers to.</p>
 
       <h3>6.5 Reference canonicalizer</h3>
-      <p>A reference canonicalizer in JavaScript and Python is published under <a href="https://github.com/yazcaleb/machineauthority-protocol/tree/main/tools/canonicalize" target="_blank" rel="noopener"><code>tools/canonicalize/</code></a>; a Go port is on the post-v1.0 roadmap. Cross-language test vectors at <a href="https://github.com/yazcaleb/machineauthority-protocol/tree/main/test-vectors/vectors/canonicalize" target="_blank" rel="noopener"><code>test-vectors/vectors/canonicalize/</code></a> include Unicode-edge, empty-key-rejection, and large-array cases. Conforming implementations MUST pass every vector.</p>
+      <p>A reference canonicalizer in JavaScript and Python is published under <a href="https://github.com/PlawIO/machineauthority-protocol/tree/main/tools/canonicalize" target="_blank" rel="noopener"><code>tools/canonicalize/</code></a>; a Go port is on the post-v1.0 roadmap. Cross-language test vectors at <a href="https://github.com/PlawIO/machineauthority-protocol/tree/main/test-vectors/vectors/canonicalize" target="_blank" rel="noopener"><code>test-vectors/vectors/canonicalize/</code></a> include Unicode-edge, empty-key-rejection, and large-array cases. Conforming implementations MUST pass every vector.</p>
     </section>
 
     <section>
@@ -272,10 +272,10 @@ Published: 2026-05-03</div>
     <section>
       <h2>9. References</h2>
       <ul>
-        <li>Source spec: <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/spec/car.md" target="_blank" rel="noopener">github.com/yazcaleb/machineauthority-protocol/spec/car.md</a></li>
-        <li>Schema: <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/schema/car-v1.json" target="_blank" rel="noopener"><code>schema/car-v1.json</code></a></li>
-        <li>Examples: <a href="https://github.com/yazcaleb/machineauthority-protocol/tree/main/examples" target="_blank" rel="noopener"><code>examples/</code></a></li>
-        <li>Canonicalizer: <a href="https://github.com/yazcaleb/machineauthority-protocol/tree/main/tools/canonicalize" target="_blank" rel="noopener"><code>tools/canonicalize/</code></a></li>
+        <li>Source spec: <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/spec/car.md" target="_blank" rel="noopener">github.com/PlawIO/machineauthority-protocol/spec/car.md</a></li>
+        <li>Schema: <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/schema/car-v1.json" target="_blank" rel="noopener"><code>schema/car-v1.json</code></a></li>
+        <li>Examples: <a href="https://github.com/PlawIO/machineauthority-protocol/tree/main/examples" target="_blank" rel="noopener"><code>examples/</code></a></li>
+        <li>Canonicalizer: <a href="https://github.com/PlawIO/machineauthority-protocol/tree/main/tools/canonicalize" target="_blank" rel="noopener"><code>tools/canonicalize/</code></a></li>
       </ul>
       <h3>Normative references</h3>
       <ul>

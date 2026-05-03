@@ -25,7 +25,7 @@
 
 set -e
 
-REPO="https://github.com/yazcaleb/machineauthority-protocol.git"
+REPO="https://github.com/PlawIO/machineauthority-protocol.git"
 BRANCH="main"
 
 green() { printf '\033[1;32m%s\033[0m' "$*"; }
@@ -103,6 +103,6 @@ Spec:        https://machineauthority.org/spec/car
              https://machineauthority.org/spec/decision-envelope
              https://machineauthority.org/spec/elicitation-loop
              https://machineauthority.org/spec/cryptographic-attestation
-Conformance: https://github.com/yazcaleb/machineauthority-protocol/blob/main/CONFORMANCE.md
-Reference:   https://github.com/yazcaleb/machineauthority-protocol/tree/main/reference
+Conformance: https://github.com/PlawIO/machineauthority-protocol/blob/main/CONFORMANCE.md
+Reference:   https://github.com/PlawIO/machineauthority-protocol/tree/main/reference
 EOF

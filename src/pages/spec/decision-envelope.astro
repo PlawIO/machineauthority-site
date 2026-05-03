@@ -11,7 +11,7 @@ Published: 2026-05-03</div>
     <section>
       <h2>Abstract</h2>
       <p>The Decision Envelope is the response object returned by the Action Authorization Boundary (AAB) when a <a href="/spec/car">Canonical Action Representation (CAR)</a> is submitted for evaluation. It carries one of six <a href="https://aarm.dev" target="_blank" rel="noopener">AARM v1</a> &sect;R4 decisions (<code>ALLOW</code>, <code>DENY</code>, <code>DEFER</code>, <code>MODIFY</code>, <code>STEP_UP</code>, <code>REVOKE</code>), the policy version under which the decision was made, an evaluation timestamp, the optional payload that the decision requires, and an <code>aab_signature</code> that the dispatcher verifies before acting on the envelope.</p>
-      <p>The Decision Envelope is the wire-format binding of AARM v1 &sect;R4 (decision states) and the integrity surface used by &sect;R5 (signed receipts) when the envelope is later embedded in a <a href="/spec/cryptographic-attestation">Cryptographic Attestation of Consent (CAC)</a>. The normative artifact for validation is <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/schema/decision-envelope-v1.json" target="_blank" rel="noopener"><code>schema/decision-envelope-v1.json</code></a>.</p>
+      <p>The Decision Envelope is the wire-format binding of AARM v1 &sect;R4 (decision states) and the integrity surface used by &sect;R5 (signed receipts) when the envelope is later embedded in a <a href="/spec/cryptographic-attestation">Cryptographic Attestation of Consent (CAC)</a>. The normative artifact for validation is <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/schema/decision-envelope-v1.json" target="_blank" rel="noopener"><code>schema/decision-envelope-v1.json</code></a>.</p>
     </section>
 
     <section>
@@ -201,7 +201,7 @@ Published: 2026-05-03</div>
 
     <section>
       <h2>6. Examples</h2>
-      <p>See <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/examples/decision-allow.json" target="_blank" rel="noopener"><code>examples/decision-allow.json</code></a>, <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/examples/decision-defer.json" target="_blank" rel="noopener"><code>examples/decision-defer.json</code></a>, <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/examples/decision-modify.json" target="_blank" rel="noopener"><code>examples/decision-modify.json</code></a>, and <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/examples/decision-step-up.json" target="_blank" rel="noopener"><code>examples/decision-step-up.json</code></a>.</p>
+      <p>See <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/examples/decision-allow.json" target="_blank" rel="noopener"><code>examples/decision-allow.json</code></a>, <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/examples/decision-defer.json" target="_blank" rel="noopener"><code>examples/decision-defer.json</code></a>, <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/examples/decision-modify.json" target="_blank" rel="noopener"><code>examples/decision-modify.json</code></a>, and <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/examples/decision-step-up.json" target="_blank" rel="noopener"><code>examples/decision-step-up.json</code></a>.</p>
     </section>
 
     <section>
@@ -218,9 +218,9 @@ Published: 2026-05-03</div>
     <section>
       <h2>8. References</h2>
       <ul>
-        <li>Source spec: <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/spec/decision-envelope.md" target="_blank" rel="noopener">github.com/yazcaleb/machineauthority-protocol/spec/decision-envelope.md</a></li>
-        <li>Schema: <a href="https://github.com/yazcaleb/machineauthority-protocol/blob/main/schema/decision-envelope-v1.json" target="_blank" rel="noopener"><code>schema/decision-envelope-v1.json</code></a></li>
-        <li>Examples: <a href="https://github.com/yazcaleb/machineauthority-protocol/tree/main/examples" target="_blank" rel="noopener"><code>examples/</code></a></li>
+        <li>Source spec: <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/spec/decision-envelope.md" target="_blank" rel="noopener">github.com/PlawIO/machineauthority-protocol/spec/decision-envelope.md</a></li>
+        <li>Schema: <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/schema/decision-envelope-v1.json" target="_blank" rel="noopener"><code>schema/decision-envelope-v1.json</code></a></li>
+        <li>Examples: <a href="https://github.com/PlawIO/machineauthority-protocol/tree/main/examples" target="_blank" rel="noopener"><code>examples/</code></a></li>
       </ul>
     </section>
   </div>
