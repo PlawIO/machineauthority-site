@@ -128,6 +128,9 @@ Published: 2026-05-03</div>
 
       <h3>5.3 Validity windows</h3>
       <p>A CAC issued under a key valid at <code>decided_at</code> remains valid evidence after the key is rotated &mdash; the verifier's clock is not used to invalidate historical CACs. This matches the Sigstore/Fulcio model and lets CACs survive routine key churn.</p>
+
+      <h3>5.4 Reference verifier</h3>
+      <p><a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/reference/cli/cac-verify.js" target="_blank" rel="noopener"><code>reference/cli/cac-verify.js</code></a> implements steps 1&ndash;9 above for both encoding profiles. The schema gate at <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/reference/lib/schema.js" target="_blank" rel="noopener"><code>reference/lib/schema.js</code></a> runs <em>before</em> any cryptographic check, so a malformed CAC always returns <code>SCHEMA_VIOLATION</code> rather than masquerading as <code>BAD_SIGNATURE</code>. Conformance vectors live under <a href="https://github.com/PlawIO/machineauthority-protocol/tree/main/test-vectors/vectors/cac" target="_blank" rel="noopener"><code>test-vectors/vectors/cac/&#123;jws,dsse&#125;/&#123;valid,invalid&#125;/</code></a> with one vector per verdict.</p>
     </section>
 
     <section>

@@ -166,6 +166,8 @@ Published: 2026-05-03</div>
         <li>Reject the envelope if any step fails. The dispatcher MUST NOT execute, defer, modify, or step up on an envelope that fails verification.</li>
       </ol>
 
+      <p>Reference verifier: <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/reference/cli/env-verify.js" target="_blank" rel="noopener"><code>reference/cli/env-verify.js</code></a> implements steps 1&ndash;7. The schema gate at <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/reference/lib/schema.js" target="_blank" rel="noopener"><code>reference/lib/schema.js</code></a> runs first; a payload missing the conditional fields required by the chosen <code>decision</code> returns <code>SCHEMA_VIOLATION</code> before signature verification is attempted. Conformance vectors live under <a href="https://github.com/PlawIO/machineauthority-protocol/tree/main/test-vectors/vectors/decision" target="_blank" rel="noopener"><code>test-vectors/vectors/decision/&#123;valid,invalid&#125;/</code></a> with one vector per decision state and one per verifier failure mode.</p>
+
       <h3>4.3 Why a JWS over the canonical envelope (not just <code>car_hash</code>)</h3>
       <p>A signature solely over <code>car_hash</code> would prove the AAB knew about the CAR but would not prevent rewriting <code>decision</code>, <code>expires_at</code>, <code>approver_endpoint</code>, <code>required_acr</code>, or <code>reason_code</code>. Each of those fields is a security boundary. The MAP envelope signature MUST cover the complete envelope state because any field is policy-bearing.</p>
 
