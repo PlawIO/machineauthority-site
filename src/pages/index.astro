@@ -182,9 +182,12 @@ import Base from '../layouts/Base.astro';
 
     <section>
       <h2>Verify it yourself</h2>
-      <p>One command clones the reference implementation, walks a complete elicitation loop (CAR &rarr; DEFER &rarr; APPROVE &rarr; CAC &rarr; receipt), and verifies every Ed25519 signature against published JWKS. No npm install &mdash; the verifier uses Node's stdlib crypto.</p>
-<pre><code>curl -sL https://machineauthority.org/examples/v1/dispatch.sh | sh</code></pre>
-      <p class="note">Exit 0 only if every step verifies: DEFER envelope (<code>MAP-DECISION-ENVELOPE-1</code>), CAC over canonical CAR (<code>MAP-CAC-JWS-1</code> RFC 7797 detached), the same CAC re-encoded as DSSE+in-toto (<code>MAP-CAC-DSSE-1</code>), and the full loop with DPoP-bound resume_token. Source: <a href="/examples/v1/dispatch.sh"><code>/examples/v1/dispatch.sh</code></a>.</p>
+      <p>Clone the reference implementation, install its two dependencies (<code>ajv</code>, <code>ajv-formats</code>), and run the conformance driver. It walks every vector under <code>/test-vectors/</code> through the four reference verifier CLIs (<code>env-verify</code>, <code>cac-verify</code>, <code>loop-verify</code>, <code>dpop-verify</code>) and asserts each verdict and exit code against the expected outcome pinned in the vector's <code>expected_verdict.txt</code>.</p>
+<pre><code>git clone https://github.com/PlawIO/machineauthority-protocol
+cd machineauthority-protocol/reference
+npm install
+node cli/run-conformance.js</code></pre>
+      <p class="note">Exit 0 only if all 56 vectors agree. Verifier verdicts are pinned to the alphabet defined in the spec (<code>OK</code>, <code>SCHEMA_VIOLATION</code>, <code>MISSING_SIGNATURE</code>, <code>BAD_SIGNATURE</code>, <code>BAD_HASH</code>, <code>EXPIRED_KEY</code>, <code>UNRESOLVABLE_KID</code>, <code>UNRESOLVABLE_APPROVER_IDENTITY</code>, <code>INTENT_DIGEST_MISMATCH</code>, plus the DPoP family). Source: <a href="https://github.com/PlawIO/machineauthority-protocol/blob/main/reference/cli/run-conformance.js" target="_blank" rel="noopener"><code>reference/cli/run-conformance.js</code></a>. An end-to-end loop demo is also available at <a href="/examples/v1/dispatch.sh"><code>/examples/v1/dispatch.sh</code></a> &mdash; read it before you run it.</p>
     </section>
 
     <hr />
